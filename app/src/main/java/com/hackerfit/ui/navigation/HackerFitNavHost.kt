@@ -1,0 +1,72 @@
+package com.hackerfit.ui.navigation
+
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.hackerfit.ui.screens.assessment.AssessmentScreen
+import com.hackerfit.ui.screens.exercise.ExerciseDetailScreen
+import com.hackerfit.ui.screens.history.HistoryScreen
+import com.hackerfit.ui.screens.home.HomeScreen
+import com.hackerfit.ui.screens.onboarding.OnboardingScreen
+import com.hackerfit.ui.screens.settings.SettingsScreen
+import com.hackerfit.ui.screens.workout.WorkoutScreen
+
+@Composable
+fun AppNavHost(
+    navController: NavHostController,
+    innerPadding: PaddingValues
+) {
+    NavHost(
+        navController = navController,
+        startDestination = "onboarding"
+    ) {
+        composable("onboarding") {
+            OnboardingScreen(
+                onComplete = {
+                    navController.navigate("home") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable("home") {
+            HomeScreen(
+                onStartWorkout = { navController.navigate("workout") },
+                onStartAssessment = { navController.navigate("assessment") },
+                innerPadding = innerPadding
+            )
+        }
+        composable("workout") {
+            WorkoutScreen(
+                onFinish = {
+                    navController.popBackStack()
+                },
+                onExerciseInfo = { exerciseIndex ->
+                    navController.navigate("exercise/$exerciseIndex")
+                }
+            )
+        }
+        composable("assessment") {
+            AssessmentScreen(
+                onFinish = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable("exercise/{index}") { backStackEntry ->
+            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
+            ExerciseDetailScreen(
+                exerciseIndex = index,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("history") {
+            HistoryScreen(innerPadding = innerPadding)
+        }
+        composable("settings") {
+            SettingsScreen(innerPadding = innerPadding)
+        }
+    }
+}
