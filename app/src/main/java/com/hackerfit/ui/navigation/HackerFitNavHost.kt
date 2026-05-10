@@ -9,8 +9,10 @@ import com.hackerfit.ui.screens.assessment.AssessmentScreen
 import com.hackerfit.ui.screens.exercise.ExerciseDetailScreen
 import com.hackerfit.ui.screens.history.HistoryScreen
 import com.hackerfit.ui.screens.home.HomeScreen
+import com.hackerfit.ui.screens.ladder.LadderScreen
 import com.hackerfit.ui.screens.onboarding.OnboardingScreen
 import com.hackerfit.ui.screens.settings.SettingsScreen
+import com.hackerfit.ui.screens.stats.StatsScreen
 import com.hackerfit.ui.screens.workout.WorkoutScreen
 
 @Composable
@@ -35,6 +37,7 @@ fun AppNavHost(
             HomeScreen(
                 onStartWorkout = { navController.navigate("workout") },
                 onStartAssessment = { navController.navigate("assessment") },
+                onViewLadder = { navController.navigate("ladder") },
                 innerPadding = innerPadding
             )
         }
@@ -59,6 +62,14 @@ fun AppNavHost(
             val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
             ExerciseDetailScreen(
                 exerciseIndex = index,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("stats") {
+            StatsScreen(innerPadding = innerPadding)
+        }
+        composable("ladder") {
+            LadderScreen(
                 onBack = { navController.popBackStack() }
             )
         }

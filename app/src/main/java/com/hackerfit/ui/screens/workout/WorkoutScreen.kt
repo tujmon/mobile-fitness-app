@@ -1,18 +1,22 @@
 package com.hackerfit.ui.screens.workout
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.hackerfit.domain.constants.FitnessLadder
 import com.hackerfit.domain.model.WorkoutExercise
+import com.hackerfit.ui.components.RepCounter
 
 @Composable
 fun WorkoutScreen(
@@ -61,6 +65,11 @@ private fun WorkoutContent(
     val exercise = exercises[currentIndex]
     val isLast = currentIndex == exercises.lastIndex
     val progress = (currentIndex + 1).toFloat() / exercises.size
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(300),
+        label = "progress"
+    )
 
     Column(
         modifier = Modifier
@@ -68,7 +77,7 @@ private fun WorkoutContent(
             .padding(16.dp)
     ) {
         LinearProgressIndicator(
-            progress = { progress },
+            progress = { animatedProgress },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)
@@ -76,7 +85,7 @@ private fun WorkoutContent(
         )
 
         Text(
-            text = "Exerc\u00edcio ${currentIndex + 1} de ${exercises.size}",
+            text = "Exercicio ${currentIndex + 1} de ${exercises.size}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -95,7 +104,11 @@ private fun WorkoutContent(
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = { onExerciseInfo(currentIndex) }) {
-                Text(text = "\u2139\ufe0f", fontSize = 24.sp)
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = "Info do exercicio",
+                    modifier = Modifier.scale(1.2f)
+                )
             }
         }
 
@@ -122,7 +135,7 @@ private fun WorkoutContent(
             RunJumpTarget(exercise = exercise)
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = onCompleteExercise,
+                onClick = if (isLast) onFinish else onCompleteExercise,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -138,7 +151,8 @@ private fun WorkoutContent(
                 currentReps = currentReps,
                 targetReps = exercise.targetReps,
                 onIncrement = onIncrement,
-                onDecrement = onDecrement
+                onDecrement = onDecrement,
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
@@ -149,58 +163,13 @@ private fun WorkoutContent(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
-                    text = if (isLast) "Finalizar Treino" else "Concluir Exerc\u00edcio",
+                    text = if (isLast) "Finalizar Treino" else "Concluir Exercicio",
                     fontSize = 18.sp
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
-    }
-}
-
-@Composable
-private fun RepCounter(
-    currentReps: Int,
-    targetReps: Int,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Alvo: $targetReps",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            FilledTonalButton(
-                onClick = onDecrement,
-                modifier = Modifier.size(64.dp),
-                shape = RoundedCornerShape(32.dp)
-            ) {
-                Text(text = "-", fontSize = 28.sp)
-            }
-            Text(
-                text = "$currentReps",
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.width(120.dp)
-            )
-            FilledTonalButton(
-                onClick = onIncrement,
-                modifier = Modifier.size(64.dp),
-                shape = RoundedCornerShape(32.dp)
-            ) {
-                Text(text = "+", fontSize = 28.sp)
-            }
-        }
     }
 }
 

@@ -31,7 +31,7 @@ class StreakDataStore @Inject constructor(
         StreakData(
             streakCount = prefs[Keys.STREAK_COUNT] ?: 0,
             freezesBanked = prefs[Keys.FREEZES_BANKED] ?: 0,
-            lastFreezeEarnDate = prefs[Keys.LAST_FREEZE_EARN_DATE]?.let { LocalDate.parse(it) }
+            lastFreezeEarnDate = prefs[Keys.LAST_FREEZE_EARN_DATE]?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
         )
     }
 

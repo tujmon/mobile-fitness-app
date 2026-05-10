@@ -2,7 +2,6 @@ package com.hackerfit.di
 
 import android.content.Context
 import androidx.room.Room
-import com.hackerfit.data.local.db.Converters
 import com.hackerfit.data.local.db.HackerFitDatabase
 import com.hackerfit.data.local.db.dao.AssessmentLogDao
 import com.hackerfit.data.local.db.dao.DailyLogDao
@@ -26,7 +25,6 @@ object DatabaseModule {
             HackerFitDatabase::class.java,
             "hackerfit.db"
         )
-            .addTypeConverter(Converters())
             .build()
     }
 

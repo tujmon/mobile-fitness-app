@@ -23,4 +23,7 @@ interface UserProfileDao {
 
     @Query("UPDATE user_profile SET dailyReminderHour = NULL, dailyReminderMinute = NULL WHERE id = 1")
     suspend fun clearReminderTime()
+
+    @Query("SELECT * FROM user_profile WHERE id = 1")
+    suspend fun getProfileOnce(): UserProfileEntity?
 }

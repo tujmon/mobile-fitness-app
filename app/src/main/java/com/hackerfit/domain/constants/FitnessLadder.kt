@@ -1,6 +1,7 @@
 package com.hackerfit.domain.constants
 
 data class ExerciseDefinition(
+    val index: Int,
     val name: String,
     val introductoryDescription: String,
     val lifetimeDescription: String
@@ -20,29 +21,34 @@ object FitnessLadder {
 
     val exercises = listOf(
         ExerciseDefinition(
-            name = "Flex\u00e3o para Frente",
-            introductoryDescription = "Fique em p\u00e9 com as pernas afastadas, m\u00e3os estendidas acima da cabe\u00e7a. Dobre para frente o m\u00e1ximo que puder, tentando tocar os dedos dos p\u00e9s. Endireite-se e dobre para tr\u00e1s moderadamente. Repita.",
-            lifetimeDescription = "Fique em p\u00e9 com as pernas afastadas, m\u00e3os estendidas acima da cabe\u00e7a. Dobre para frente e toque o ch\u00e3o entre as pernas, salte alguns cent\u00edmetros para cima e toque o ch\u00e3o novamente. Endireite-se e dobre para tr\u00e1s. Repita."
+            index = 0,
+            name = "Flexao para Frente",
+            introductoryDescription = "Fique em pe com as pernas afastadas, maos estendidas acima da cabeca. Dobre para frente o maximo que puder, tentando tocar os dedos dos pes. Endireite-se e dobre para tras moderadamente. Repita.",
+            lifetimeDescription = "Fique em pe com as pernas afastadas, maos estendidas acima da cabeca. Dobre para frente e toque o chao entre as pernas, salte alguns centimetros para cima e toque o chao novamente. Endireite-se e dobre para tras. Repita."
         ),
         ExerciseDefinition(
+            index = 1,
             name = "Abdominal",
-            introductoryDescription = "Deite-se de costas, p\u00e9s ligeiramente afastados, m\u00e3os ao lado do corpo. Levante a cabe\u00e7a e os ombros do ch\u00e3o o suficiente para ver os calcanhares. Abaixe suavemente. Repita.",
-            lifetimeDescription = "Deite-se de costas, p\u00e9s ligeiramente afastados, m\u00e3os ao lado do corpo. Levante o corpo superior, dobrando na cintura, at\u00e9 sentar-se verticalmente. Mantenha os bra\u00e7os ao lado e os p\u00e9s no ch\u00e3o. Abaixe suavemente. Repita."
+            introductoryDescription = "Deite-se de costas, pes ligeiramente afastados, maos ao lado do corpo. Levante a cabeca e os ombros do chao o suficiente para ver os calcanhares. Abaixe suavemente. Repita.",
+            lifetimeDescription = "Deite-se de costas, pes ligeiramente afastados, maos ao lado do corpo. Levante o corpo superior, dobrando na cintura, ate sentar-se verticalmente. Mantenha os bracos ao lado e os pes no chao. Abaixe suavemente. Repita."
         ),
         ExerciseDefinition(
-            name = "Eleva\u00e7\u00e3o de Pernas",
-            introductoryDescription = "Deite-se de bru\u00e7os, pernas ligeiramente afastadas, palmas sob as coxas. Levante a perna esquerda (dobrando no quadril e joelho) enquanto levanta a cabe\u00e7a. Abaixe. Depois levante a perna direita e a cabe\u00e7a da mesma forma. Cada repeti\u00e7\u00e3o conta ambas as pernas.",
-            lifetimeDescription = "Deite-se de bru\u00e7os, pernas ligeiramente afastadas, palmas sob as coxas. Levante AMBAS as pernas pelo menos alto o suficiente para que as coxas saiam das m\u00e3os. Simultaneamente levante a cabe\u00e7a e os ombros. Abaixe tudo suavemente. Repita."
+            index = 2,
+            name = "Elevacao de Pernas",
+            introductoryDescription = "Deite-se de brucos, pernas ligeiramente afastadas, palmas sob as coxas. Levante a perna esquerda (dobrando no quadril e joelho) enquanto levanta a cabeca. Abaixe. Depois levante a perna direita e a cabeca da mesma forma. Cada repeticao conta ambas as pernas.",
+            lifetimeDescription = "Deite-se de brucos, pernas ligeiramente afastadas, palmas sob as coxas. Levante AMBAS as pernas pelo menos alto o suficiente para que as coxas saiam das maos. Simultaneamente levante a cabeca e os ombros. Abaixe tudo suavemente. Repita."
         ),
         ExerciseDefinition(
-            name = "Flex\u00e3o de Bra\u00e7o",
-            introductoryDescription = "Deite-se de bru\u00e7os, palmas logo fora dos ombros, bra\u00e7os dobrados. Mantendo os JOELHOS no ch\u00e3o e permitindo que as pernas dobrem nos joelhos, levante o corpo superior at\u00e9 que os bra\u00e7os estejam esticados. Abaixe. Repita.",
-            lifetimeDescription = "Deite-se de bru\u00e7os, palmas logo fora dos ombros, bra\u00e7os dobrados. Mantendo o CORPO INTEIRO reto (sem joelhos no ch\u00e3o), levante o corpo at\u00e9 que os bra\u00e7os estejam esticados. Abaixe. Repita."
+            index = 3,
+            name = "Flexao de Braco",
+            introductoryDescription = "Deite-se de brucos, palmas logo fora dos ombros, bracos dobrados. Mantendo os JOELHOS no chao e permitindo que as pernas dobrem nos joelhos, levante o corpo superior ate que os bracos estejam esticados. Abaixe. Repita.",
+            lifetimeDescription = "Deite-se de brucos, palmas logo fora dos ombros, bracos dobrados. Mantendo o CORPO INTEIRO reto (sem joelhos no chao), levante o corpo ate que os bracos estejam esticados. Abaixe. Repita."
         ),
         ExerciseDefinition(
+            index = 4,
             name = "Corrida e Salto",
-            introductoryDescription = "Corra no lugar em ritmo acelerado, levantando as pernas 10\u201315 cm do ch\u00e3o. Conte um passo apenas quando o P\u00c9 ESQUERDO tocar o ch\u00e3o. A cada 75 passos, pare e fa\u00e7a 7 polichinelos introdut\u00f3rios: fique com as pernas juntas, bra\u00e7os ao lado; salte estendendo as pernas para o lado e os bra\u00e7os para fora at\u00e9 a altura dos ombros; salte de volta.",
-            lifetimeDescription = "Corra no lugar em ritmo acelerado, levantando as pernas 10\u201315 cm do ch\u00e3o. A cada 75 passos, pare e fa\u00e7a 10 polichinelos completos: mesmo movimento, mas com extens\u00e3o total."
+            introductoryDescription = "Corra no lugar em ritmo acelerado, levantando as pernas 10-15 cm do chao. Conte um passo apenas quando o PE ESQUERDO tocar o chao. A cada 75 passos, pare e faca 7 polichinelos introdutorios: fique com as pernas juntas, bracos ao lado; salte estendendo as pernas para o lado e os bracos para fora ate a altura dos ombros; salte de volta.",
+            lifetimeDescription = "Corra no lugar em ritmo acelerado, levantando as pernas 10-15 cm do chao. A cada 75 passos, pare e faca 10 polichinelos completos: mesmo movimento, mas com extensao total."
         )
     )
 

@@ -36,4 +36,8 @@ class AssessmentRepositoryImpl @Inject constructor(
     override suspend fun getLastAssessmentDate(): LocalDate? {
         return dao.getLastAssessmentDate()
     }
+
+    override suspend fun deleteAssessment(id: Long) {
+        dao.deleteById(id)
+    }
 }

@@ -41,6 +41,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
 }
 
 dependencies {
@@ -76,4 +82,20 @@ dependencies {
 
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.coroutines.test)
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.test.junit4)
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.coroutines.test)
+    androidTestImplementation(libs.hilt.testing)
+    debugImplementation(libs.compose.test.manifest)
 }

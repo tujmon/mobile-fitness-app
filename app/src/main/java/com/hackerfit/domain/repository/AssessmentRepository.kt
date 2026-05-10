@@ -8,4 +8,5 @@ interface AssessmentRepository {
     fun getAllAssessments(): Flow<List<AssessmentLog>>
     suspend fun saveAssessment(assessment: AssessmentLog)
     suspend fun getLastAssessmentDate(): LocalDate?
+    suspend fun deleteAssessment(id: Long)
 }

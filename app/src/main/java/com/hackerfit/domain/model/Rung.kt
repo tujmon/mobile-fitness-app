@@ -15,6 +15,7 @@ data class Rung(
 )
 
 data class WorkoutExercise(
+    val index: Int,
     val name: String,
     val description: String,
     val targetReps: Int,

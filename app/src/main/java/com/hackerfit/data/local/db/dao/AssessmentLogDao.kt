@@ -18,4 +18,13 @@ interface AssessmentLogDao {
 
     @Query("DELETE FROM assessment_log")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM assessment_log ORDER BY date DESC")
+    suspend fun getAllAssessmentsList(): List<AssessmentLogEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(assessments: List<AssessmentLogEntity>)
+
+    @Query("DELETE FROM assessment_log WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }

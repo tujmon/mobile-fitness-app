@@ -1,0 +1,59 @@
+package com.hackerfit.ui.screens.ladder
+
+import com.hackerfit.FakeUserProfileRepository
+import com.hackerfit.domain.model.Phase
+import com.hackerfit.domain.model.UserProfile
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
+import java.time.LocalDate
+
+class LadderViewModelTest {
+
+    private lateinit var profileRepo: FakeUserProfileRepository
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setup() {
+        profileRepo = FakeUserProfileRepository()
+    }
+
+    @Test
+    fun `defaults to rung 1 when no profile`() = runTest(testDispatcher) {
+        profileRepo.setProfile(null)
+        val viewModel = LadderViewModel(profileRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(1, viewModel.currentRung.value)
+    }
+
+    @Test
+    fun `shows current rung from profile`() = runTest(testDispatcher) {
+        profileRepo.setProfile(UserProfile(15, Phase.INTRODUCTORY, LocalDate.now(), null, null, true))
+        val viewModel = LadderViewModel(profileRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(15, viewModel.currentRung.value)
+    }
+
+    @Test
+    fun `updates when profile rung changes`() = runTest(testDispatcher) {
+        val profile = UserProfile(5, Phase.INTRODUCTORY, LocalDate.now(), null, null, true)
+        profileRepo.setProfile(profile)
+        val viewModel = LadderViewModel(profileRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(5, viewModel.currentRung.value)
+
+        profileRepo.updateRung(10)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(10, viewModel.currentRung.value)
+    }
+
+    @Test
+    fun `handles lifetime phase rung`() = runTest(testDispatcher) {
+        profileRepo.setProfile(UserProfile(30, Phase.LIFETIME, LocalDate.now(), null, null, true))
+        val viewModel = LadderViewModel(profileRepo)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(30, viewModel.currentRung.value)
+    }
+}

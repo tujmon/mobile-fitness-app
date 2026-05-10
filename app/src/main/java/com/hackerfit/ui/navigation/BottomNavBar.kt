@@ -4,11 +4,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -16,6 +19,9 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.hackerfit.PendingImportState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
 
 data class BottomNavItem(
     val route: String,
@@ -25,7 +31,8 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("home", "In\u00edcio", Icons.Filled.Home, Icons.Outlined.Home),
+    BottomNavItem("home", "Inicio", Icons.Filled.Home, Icons.Outlined.Home),
+    BottomNavItem("stats", "Estat\u00edsticas", Icons.Filled.BarChart, Icons.Outlined.BarChart),
     BottomNavItem("history", "Hist\u00f3rico", Icons.Filled.History, Icons.Outlined.History),
     BottomNavItem("settings", "Config", Icons.Filled.Settings, Icons.Outlined.Settings)
 )
@@ -38,6 +45,21 @@ fun HackerFitNavHost() {
     val currentDestination = navBackStackEntry?.destination
 
     val showBottomBar = bottomNavItems.any { it.route == currentDestination?.route }
+
+    LaunchedEffect(Unit) {
+        PendingImportState.pendingUri
+            .filterNotNull()
+            .collect {
+                delay(800)
+                navController.navigate("settings") {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+    }
 
     Scaffold(
         bottomBar = {

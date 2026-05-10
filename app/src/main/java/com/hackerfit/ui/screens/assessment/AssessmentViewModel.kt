@@ -53,26 +53,31 @@ class AssessmentViewModel @Inject constructor(
 
         exercises = listOf(
             WorkoutExercise(
+                index = 0,
                 name = exDefs[0].name,
                 description = if (isIntro) exDefs[0].introductoryDescription else exDefs[0].lifetimeDescription,
                 targetReps = rungData.bend
             ),
             WorkoutExercise(
+                index = 1,
                 name = exDefs[1].name,
                 description = if (isIntro) exDefs[1].introductoryDescription else exDefs[1].lifetimeDescription,
                 targetReps = rungData.sitUp
             ),
             WorkoutExercise(
+                index = 2,
                 name = exDefs[2].name,
                 description = if (isIntro) exDefs[2].introductoryDescription else exDefs[2].lifetimeDescription,
                 targetReps = rungData.legLift
             ),
             WorkoutExercise(
+                index = 3,
                 name = exDefs[3].name,
                 description = if (isIntro) exDefs[3].introductoryDescription else exDefs[3].lifetimeDescription,
                 targetReps = rungData.pushUp
             ),
             WorkoutExercise(
+                index = 4,
                 name = exDefs[4].name,
                 description = if (isIntro) exDefs[4].introductoryDescription else exDefs[4].lifetimeDescription,
                 targetReps = rungData.runJumpSets * 75 + rungData.runJumpExtraSteps,

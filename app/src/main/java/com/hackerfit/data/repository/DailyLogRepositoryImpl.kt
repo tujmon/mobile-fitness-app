@@ -53,4 +53,8 @@ class DailyLogRepositoryImpl @Inject constructor(
         }
         return count
     }
+
+    override suspend fun deleteLog(id: Long) {
+        dao.deleteById(id)
+    }
 }

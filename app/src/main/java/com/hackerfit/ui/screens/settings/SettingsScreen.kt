@@ -1,22 +1,23 @@
 package com.hackerfit.ui.screens.settings
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.hackerfit.PendingImportState
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,10 +27,30 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
+    val importState by viewModel.importState.collectAsState()
+
+    val pendingImportUri by PendingImportState.pendingUri.collectAsState()
+    LaunchedEffect(pendingImportUri) {
+        if (pendingImportUri != null) {
+            PendingImportState.clear()
+            viewModel.readImportData(pendingImportUri!!)
+        }
+    }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let { viewModel.exportData(it) }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.readImportData(it) }
+    }
 
     Scaffold(
         topBar = {
@@ -99,6 +120,64 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Dados",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    exportLauncher.launch("hackerfit-backup.json")
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Download,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Exportar Dados")
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    importLauncher.launch(arrayOf("application/json"))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Upload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Importar Dados")
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "Exporte seus dados para n\u00e3o perder o progresso ao trocar de dispositivo.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     OutlinedButton(
                         onClick = { showDeleteDialog = true },
                         modifier = Modifier.fillMaxWidth(),
@@ -163,7 +242,7 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Apagar todos os dados?") },
-            text = { Text("Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita. Todo o progresso ser\u00e1 perdido.") },
+            text = { Text("Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita. Exporte seus dados antes se deseja manter seu progresso.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -183,5 +262,83 @@ fun SettingsScreen(
                 }
             }
         )
+    }
+
+    when (val impState = importState) {
+        is ImportState.Loading -> {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Importando...") },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text("Lendo dados do arquivo...")
+                    }
+                },
+                confirmButton = {}
+            )
+        }
+        is ImportState.Confirm -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetImportState() },
+                title = { Text("Importar dados?") },
+                text = {
+                    Column {
+                        Text("Foram encontrados:")
+                        Text("\u2022 ${impState.logCount} registros de treino")
+                        Text("\u2022 ${impState.assessmentCount} avaliacoes")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Como deseja importar?")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.confirmImport(replace = true)
+                    }) {
+                        Text("Substituir tudo")
+                    }
+                },
+                dismissButton = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            viewModel.confirmImport(replace = false)
+                        }) {
+                            Text("Mesclar")
+                        }
+                        TextButton(onClick = { viewModel.resetImportState() }) {
+                            Text("Cancelar")
+                        }
+                    }
+                }
+            )
+        }
+        is ImportState.Done -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetImportState() },
+                title = { Text("Sucesso") },
+                text = { Text("Dados importados com sucesso!") },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetImportState() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+        is ImportState.Error -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetImportState() },
+                title = { Text("Erro ao importar") },
+                text = { Text(impState.message) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetImportState() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+        ImportState.Idle -> {}
     }
 }

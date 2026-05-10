@@ -11,4 +11,5 @@ interface DailyLogRepository {
     suspend fun saveLog(log: DailyLog)
     suspend fun hasCompletedToday(): Boolean
     suspend fun getConsecutiveDays(): Int
+    suspend fun deleteLog(id: Long)
 }

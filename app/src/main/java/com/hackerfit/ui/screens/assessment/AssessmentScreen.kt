@@ -1,18 +1,25 @@
 package com.hackerfit.ui.screens.assessment
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.hackerfit.domain.constants.FitnessLadder
 import com.hackerfit.domain.model.WorkoutExercise
+import com.hackerfit.ui.components.RepCounter
 
 @Composable
 fun AssessmentScreen(
@@ -62,8 +69,8 @@ fun AssessmentScreen(
 
 @Composable
 private fun AssessmentReadyContent(nextRung: Int, onStart: () -> Unit) {
-    val rungData = FitnessLadder.getRung(nextRung)
-    val phase = if (FitnessLadder.isIntroductory(nextRung)) "Introdut\u00f3ria" else "Vital\u00edcia"
+    val rungData = com.hackerfit.domain.constants.FitnessLadder.getRung(nextRung)
+    val phase = if (com.hackerfit.domain.constants.FitnessLadder.isIntroductory(nextRung)) "Introdut\u00f3ria" else "Vital\u00edcia"
 
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -96,7 +103,7 @@ private fun AssessmentReadyContent(nextRung: Int, onStart: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val exercises = FitnessLadder.exercises
+        val exercises = com.hackerfit.domain.constants.FitnessLadder.exercises
         listOf(
             "${exercises[0].name}: ${rungData.bend}x",
             "${exercises[1].name}: ${rungData.sitUp}x",
@@ -104,7 +111,7 @@ private fun AssessmentReadyContent(nextRung: Int, onStart: () -> Unit) {
             "${exercises[3].name}: ${rungData.pushUp}x",
             "${exercises[4].name}: ${rungData.runJumpSets} sets + ${rungData.runJumpExtraSteps} passos"
         ).forEach {
-            Text(text = "\u2022 $it", style = MaterialTheme.typography.bodyLarge)
+            Text(text = "- $it", style = MaterialTheme.typography.bodyLarge)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -114,7 +121,7 @@ private fun AssessmentReadyContent(nextRung: Int, onStart: () -> Unit) {
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text(text = "Tentar Degrau $nextRung", fontSize = 18.sp)
+            Text(text = "Tentar Degrau $nextRung")
         }
     }
 }
@@ -131,12 +138,26 @@ private fun AssessmentWorkoutContent(
 ) {
     val exercise = exercises[currentIndex]
     val isLast = currentIndex == exercises.lastIndex
+    val progress = (currentIndex + 1).toFloat() / exercises.size
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(300),
+        label = "progress"
+    )
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
+        LinearProgressIndicator(
+            progress = { animatedProgress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .padding(bottom = 16.dp)
+        )
+
         Text(
-            text = "Avalia\u00e7\u00e3o \u2014 Exerc\u00edcio ${currentIndex + 1}/${exercises.size}",
+            text = "Avalia\u00e7\u00e3o - Exerc\u00edcio ${currentIndex + 1}/${exercises.size}",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -156,17 +177,32 @@ private fun AssessmentWorkoutContent(
         Spacer(modifier = Modifier.weight(1f))
 
         if (!exercise.isRunJump) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+            RepCounter(
+                currentReps = currentReps,
+                targetReps = exercise.targetReps,
+                onIncrement = onIncrement,
+                onDecrement = onDecrement,
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                FilledTonalButton(onClick = onDecrement, modifier = Modifier.size(64.dp), shape = RoundedCornerShape(32.dp)) {
-                    Text("-", fontSize = 28.sp)
-                }
-                Text("$currentReps", style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                FilledTonalButton(onClick = onIncrement, modifier = Modifier.size(64.dp), shape = RoundedCornerShape(32.dp)) {
-                    Text("+", fontSize = 28.sp)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "${exercise.sets} sets de 75 passos + ${exercise.jumpingJacksPerSet} polichinelos",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    if (exercise.extraSteps > 0) {
+                        Text(
+                            text = "+ ${exercise.extraSteps} passos extras",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
         }
@@ -178,7 +214,7 @@ private fun AssessmentWorkoutContent(
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text(if (isLast) "Concluir Avalia\u00e7\u00e3o" else "Pr\u00f3ximo Exerc\u00edcio", fontSize = 18.sp)
+            Text(if (isLast) "Concluir Avalia\u00e7\u00e3o" else "Pr\u00f3ximo Exerc\u00edcio")
         }
         Spacer(modifier = Modifier.height(32.dp))
     }
@@ -207,20 +243,70 @@ private fun AssessmentEvaluationContent(
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(32.dp))
-        Button(
+
+        Card(
             onClick = onEasy,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
         ) {
-            Text("\u2705 F\u00e1cil, posso avan\u00e7ar!", fontSize = 18.sp)
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.scale(2f),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        text = "F\u00e1cil",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Posso avan\u00e7ar para o pr\u00f3ximo degrau",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
         }
+
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedButton(
+
+        OutlinedCard(
             onClick = onHard,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("\ud83d\udcaa Dif\u00edcil, vou ficar no atual", fontSize = 18.sp)
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Error,
+                    contentDescription = null,
+                    modifier = Modifier.scale(2f),
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Column {
+                    Text(
+                        text = "Dif\u00edcil",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Vou ficar no degrau atual",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
         }
     }
 }

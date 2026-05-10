@@ -27,4 +27,16 @@ interface DailyLogDao {
 
     @Query("DELETE FROM daily_log")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM daily_log ORDER BY date DESC")
+    suspend fun getAllLogsList(): List<DailyLogEntity>
+
+    @Query("SELECT * FROM daily_log WHERE date BETWEEN :start AND :end ORDER BY date ASC")
+    suspend fun getLogsInRangeList(start: LocalDate, end: LocalDate): List<DailyLogEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(logs: List<DailyLogEntity>)
+
+    @Query("DELETE FROM daily_log WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }
