@@ -2,6 +2,7 @@ package com.hackerfit.ui.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,13 +17,17 @@ import com.hackerfit.ui.screens.settings.SettingsScreen
 import com.hackerfit.ui.screens.stats.StatsScreen
 import com.hackerfit.ui.screens.workout.WorkoutScreen
 
+import kotlinx.coroutines.launch
+
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     innerPadding: PaddingValues,
     startDestination: String,
-    onOnboardingComplete: () -> Unit = {}
+    onOnboardingComplete: suspend () -> Unit = {}
 ) {
+    val scope = rememberCoroutineScope()
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -30,9 +35,11 @@ fun AppNavHost(
         composable("onboarding") {
             OnboardingScreen(
                 onComplete = {
-                    onOnboardingComplete()
-                    navController.navigate("home") {
-                        popUpTo("onboarding") { inclusive = true }
+                    scope.launch {
+                        onOnboardingComplete()
+                        navController.navigate("home") {
+                            popUpTo("onboarding") { inclusive = true }
+                        }
                     }
                 }
             )

@@ -107,11 +107,11 @@ object FitnessLadder {
     )
 
     fun getRung(rungNumber: Int): RungData {
-        val safe = rungNumber.coerceIn(1, 48)
-        return if (safe <= 15) {
-            introductoryLadder[safe - 1]
+        require(rungNumber in 1..48) { "Degrau invalido: $rungNumber" }
+        return if (rungNumber <= 15) {
+            introductoryLadder[rungNumber - 1]
         } else {
-            lifetimeLadder[safe - 16]
+            lifetimeLadder[rungNumber - 16]
         }
     }
 

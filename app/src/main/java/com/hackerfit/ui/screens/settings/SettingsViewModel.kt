@@ -17,6 +17,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 sealed interface SettingsUiState {
@@ -42,6 +43,13 @@ sealed class ExportState {
     data object Done : ExportState()
     data class Error(val message: String) : ExportState()
 }
+
+private data class AssessmentDedupKey(
+    val date: LocalDate,
+    val fromRung: Int,
+    val toRung: Int,
+    val passed: Boolean
+)
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -181,15 +189,18 @@ class SettingsViewModel @Inject constructor(
                     }
                     dailyLogDao.insertAll(mergedLogs)
                     val existingAssessments = assessmentLogDao.getAllAssessmentsList()
-                    val existingKeys = existingAssessments.map { Triple(it.date, it.fromRung, it.toRung) }.toSet()
+                    val existingKeys = existingAssessments.map {
+                        AssessmentDedupKey(it.date, it.fromRung, it.toRung, it.passed)
+                    }.toSet()
                     val newAssessments = data.assessments.filter { a ->
-                        Triple(a.date, a.fromRung, a.toRung) !in existingKeys
+                        AssessmentDedupKey(a.date, a.fromRung, a.toRung, a.passed) !in existingKeys
                     }
                     assessmentLogDao.insertAll(newAssessments)
-                    data.profile?.let { userProfileDao.saveProfile(it) }
                 }
                 if (replace) {
                     data.streak.let { streakDataStore.updateStreakData(it) }
+                } else {
+                    userProfileRepository.recalculateCurrentRung()
                 }
                 pendingImport = null
                 _importState.value = ImportState.Done

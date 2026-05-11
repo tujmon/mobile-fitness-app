@@ -174,9 +174,7 @@ fun HackerFitNavHost(
             innerPadding = innerPadding,
             startDestination = startDestination,
             onOnboardingComplete = {
-                scope.launch {
-                    viewModel.userProfileRepository.completeOnboarding()
-                }
+                viewModel.userProfileRepository.completeOnboarding()
             }
         )
     }

@@ -14,9 +14,9 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +44,8 @@ fun SettingsScreen(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var pendingReminderHour by remember { mutableIntStateOf(8) }
+    var pendingReminderMinute by remember { mutableIntStateOf(0) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -61,10 +63,7 @@ fun SettingsScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
         if (granted) {
-            val state = uiState as? SettingsUiState.Success
-            if (state != null) {
-                viewModel.setReminderTime(state.hour, state.minute)
-            }
+            viewModel.setReminderTime(pendingReminderHour, pendingReminderMinute)
         }
     }
 
@@ -240,9 +239,12 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setReminderTime(timePickerState.hour, timePickerState.minute)
+                    pendingReminderHour = timePickerState.hour
+                    pendingReminderMinute = timePickerState.minute
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        viewModel.setReminderTime(pendingReminderHour, pendingReminderMinute)
                     }
                     showTimePicker = false
                 }) {

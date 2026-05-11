@@ -56,14 +56,15 @@ class UserProfileRepositoryImpl @Inject constructor(
     override suspend fun recalculateCurrentRung() {
         val allAssessments = assessmentLogDao.getAllAssessmentsList().sortedBy { it.date }
         var rung = 1
+        var rungDate: LocalDate? = null
         for (assessment in allAssessments) {
-            if (assessment.passed) {
+            if (assessment.passed && assessment.fromRung == rung) {
                 rung = assessment.toRung.coerceIn(1, 48)
-            } else {
-                break
+                rungDate = assessment.date
             }
         }
         val phase = if (rung <= 15) "introductory" else "lifetime"
-        dao.updateRung(rung, phase, LocalDate.now())
+        val startDate = rungDate ?: dao.getProfileOnce()?.rungStartDate ?: LocalDate.now()
+        dao.updateRung(rung, phase, startDate)
     }
 }
