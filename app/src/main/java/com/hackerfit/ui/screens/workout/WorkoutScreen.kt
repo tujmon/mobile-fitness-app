@@ -43,10 +43,35 @@ fun WorkoutScreen(
                 onCompleteExercise = viewModel::completeExercise,
                 onFinish = {
                     viewModel.completeWorkout()
-                    onFinish()
                 },
                 onExerciseInfo = onExerciseInfo
             )
+        }
+        is WorkoutUiState.Saving -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Salvando treino...")
+                }
+            }
+        }
+        is WorkoutUiState.Done -> {
+            LaunchedEffect(Unit) { onFinish() }
+        }
+        is WorkoutUiState.Error -> {
+            Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onFinish) {
+                        Text("Voltar")
+                    }
+                }
+            }
         }
     }
 }

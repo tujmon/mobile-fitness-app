@@ -10,4 +10,5 @@ interface UserProfileRepository {
     suspend fun completeOnboarding()
     suspend fun setReminderTime(hour: Int, minute: Int)
     suspend fun clearReminderTime()
+    suspend fun recalculateCurrentRung()
 }

@@ -2,6 +2,7 @@ package com.hackerfit.data.repository
 
 import com.hackerfit.data.local.preferences.StreakDataStore
 import com.hackerfit.domain.model.StreakData
+import com.hackerfit.domain.repository.DailyLogRepository
 import com.hackerfit.domain.repository.StreakRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -11,7 +12,8 @@ import javax.inject.Singleton
 
 @Singleton
 class StreakRepositoryImpl @Inject constructor(
-    private val dataStore: StreakDataStore
+    private val dataStore: StreakDataStore,
+    private val dailyLogRepository: DailyLogRepository
 ) : StreakRepository {
 
     companion object {
@@ -52,5 +54,11 @@ class StreakRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun recalculateStreak() {}
+    override suspend fun recalculateStreak() {
+        val consecutiveDays = dailyLogRepository.getConsecutiveDays()
+        val current = dataStore.streakData.first()
+        dataStore.updateStreakData(
+            current.copy(streakCount = consecutiveDays)
+        )
+    }
 }

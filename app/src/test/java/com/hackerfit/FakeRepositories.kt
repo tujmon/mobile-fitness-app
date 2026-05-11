@@ -47,6 +47,8 @@ class FakeUserProfileRepository : UserProfileRepository {
             profileState.value = it.copy(dailyReminderHour = null, dailyReminderMinute = null)
         }
     }
+
+    override suspend fun recalculateCurrentRung() {}
 }
 
 class FakeDailyLogRepository : DailyLogRepository {

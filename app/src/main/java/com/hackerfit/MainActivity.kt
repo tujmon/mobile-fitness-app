@@ -10,11 +10,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.hackerfit.ui.navigation.HackerFitNavHost
+import com.hackerfit.ui.navigation.MainViewModel
 import com.hackerfit.ui.theme.HackerFitTheme
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.activity.viewModels
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val mainViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -39,7 +44,7 @@ class MainActivity : ComponentActivity() {
     private fun handleViewIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_VIEW) {
             intent.data?.let { uri ->
-                PendingImportState.setPendingImport(uri)
+                mainViewModel.setPendingImportUri(uri.toString())
             }
         }
     }

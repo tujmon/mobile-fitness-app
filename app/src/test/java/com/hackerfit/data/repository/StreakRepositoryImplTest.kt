@@ -2,6 +2,7 @@ package com.hackerfit.data.repository
 
 import com.hackerfit.data.local.preferences.StreakDataStore
 import com.hackerfit.domain.model.StreakData
+import com.hackerfit.domain.repository.DailyLogRepository
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -16,13 +17,15 @@ import java.time.LocalDate
 class StreakRepositoryImplTest {
 
     private lateinit var dataStore: StreakDataStore
+    private lateinit var dailyLogRepository: DailyLogRepository
     private lateinit var repository: StreakRepositoryImpl
 
     @Before
     fun setup() {
         dataStore = mockk(relaxed = true)
+        dailyLogRepository = mockk(relaxed = true)
         every { dataStore.streakData } returns flowOf(StreakData(5, 1, LocalDate.now()))
-        repository = StreakRepositoryImpl(dataStore)
+        repository = StreakRepositoryImpl(dataStore, dailyLogRepository)
     }
 
     @Test

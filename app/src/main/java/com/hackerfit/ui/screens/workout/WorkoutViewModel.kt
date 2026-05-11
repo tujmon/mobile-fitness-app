@@ -21,6 +21,9 @@ sealed interface WorkoutUiState {
         val currentExerciseIndex: Int,
         val currentReps: Int
     ) : WorkoutUiState
+    data object Saving : WorkoutUiState
+    data object Done : WorkoutUiState
+    data class Error(val message: String) : WorkoutUiState
 }
 
 @HiltViewModel
@@ -111,16 +114,25 @@ class WorkoutViewModel @Inject constructor(
 
     fun completeWorkout() {
         viewModelScope.launch {
-            val profile = userProfileRepository.getProfile().first() ?: return@launch
-            dailyLogRepository.saveLog(
-                DailyLog(
-                    date = LocalDate.now(),
-                    rung = profile.currentRung,
-                    completed = true,
-                    completedAt = LocalDate.now()
+            _uiState.value = WorkoutUiState.Saving
+            try {
+                val profile = userProfileRepository.getProfile().first() ?: return@launch
+                val alreadyCompleted = dailyLogRepository.hasCompletedToday()
+                dailyLogRepository.saveLog(
+                    DailyLog(
+                        date = LocalDate.now(),
+                        rung = profile.currentRung,
+                        completed = true,
+                        completedAt = LocalDate.now()
+                    )
                 )
-            )
-            streakRepository.incrementStreak()
+                if (!alreadyCompleted) {
+                    streakRepository.incrementStreak()
+                }
+                _uiState.value = WorkoutUiState.Done
+            } catch (e: Exception) {
+                _uiState.value = WorkoutUiState.Error(e.message ?: "Erro ao salvar treino")
+            }
         }
     }
 

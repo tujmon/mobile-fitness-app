@@ -15,6 +15,7 @@ import javax.inject.Inject
 
 sealed interface AssessmentUiState {
     data object Loading : AssessmentUiState
+    data object MaxRungReached : AssessmentUiState
     data class Ready(val nextRung: Int) : AssessmentUiState
     data class Workout(
         val exercises: List<WorkoutExercise>,
@@ -22,6 +23,9 @@ sealed interface AssessmentUiState {
         val currentReps: Int
     ) : AssessmentUiState
     data class Evaluation(val nextRung: Int) : AssessmentUiState
+    data object Saving : AssessmentUiState
+    data object Done : AssessmentUiState
+    data class Error(val message: String) : AssessmentUiState
 }
 
 @HiltViewModel
@@ -41,7 +45,11 @@ class AssessmentViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val profile = userProfileRepository.getProfile().first() ?: return@launch
-            nextRung = (profile.currentRung + 1).coerceAtMost(48)
+            if (profile.currentRung >= 48) {
+                _uiState.value = AssessmentUiState.MaxRungReached
+                return@launch
+            }
+            nextRung = profile.currentRung + 1
             _uiState.value = AssessmentUiState.Ready(nextRung)
         }
     }
@@ -116,17 +124,23 @@ class AssessmentViewModel @Inject constructor(
 
     fun evaluate(passed: Boolean) {
         viewModelScope.launch {
-            val profile = userProfileRepository.getProfile().first() ?: return@launch
-            assessmentRepository.saveAssessment(
-                AssessmentLog(
-                    date = LocalDate.now(),
-                    fromRung = profile.currentRung,
-                    toRung = nextRung,
-                    passed = passed
+            _uiState.value = AssessmentUiState.Saving
+            try {
+                val profile = userProfileRepository.getProfile().first() ?: return@launch
+                assessmentRepository.saveAssessment(
+                    AssessmentLog(
+                        date = LocalDate.now(),
+                        fromRung = profile.currentRung,
+                        toRung = nextRung,
+                        passed = passed
+                    )
                 )
-            )
-            if (passed) {
-                userProfileRepository.updateRung(nextRung)
+                if (passed) {
+                    userProfileRepository.updateRung(nextRung)
+                }
+                _uiState.value = AssessmentUiState.Done
+            } catch (e: Exception) {
+                _uiState.value = AssessmentUiState.Error(e.message ?: "Erro ao salvar avaliacao")
             }
         }
     }

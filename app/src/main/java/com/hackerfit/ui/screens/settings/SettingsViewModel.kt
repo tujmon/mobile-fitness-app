@@ -9,8 +9,10 @@ import com.hackerfit.data.export.DataImporter
 import com.hackerfit.data.local.db.dao.AssessmentLogDao
 import com.hackerfit.data.local.db.dao.DailyLogDao
 import com.hackerfit.data.local.db.dao.UserProfileDao
+import com.hackerfit.data.local.db.entity.UserProfileEntity
 import com.hackerfit.data.local.preferences.StreakDataStore
 import com.hackerfit.domain.repository.UserProfileRepository
+import com.hackerfit.service.ReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -34,6 +36,13 @@ sealed class ImportState {
     data class Error(val message: String) : ImportState()
 }
 
+sealed class ExportState {
+    data object Idle : ExportState()
+    data object Loading : ExportState()
+    data object Done : ExportState()
+    data class Error(val message: String) : ExportState()
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
@@ -49,6 +58,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _importState = MutableStateFlow<ImportState>(ImportState.Idle)
     val importState: StateFlow<ImportState> = _importState.asStateFlow()
+
+    private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
+    val exportState: StateFlow<ExportState> = _exportState.asStateFlow()
 
     private var pendingImport: DataImporter.ImportedData? = null
 
@@ -69,12 +81,14 @@ class SettingsViewModel @Inject constructor(
     fun setReminderTime(hour: Int, minute: Int) {
         viewModelScope.launch {
             userProfileRepository.setReminderTime(hour, minute)
+            ReminderScheduler.schedule(context, hour, minute)
         }
     }
 
     fun disableReminder() {
         viewModelScope.launch {
             userProfileRepository.clearReminderTime()
+            ReminderScheduler.cancel(context)
         }
     }
 
@@ -83,11 +97,23 @@ class SettingsViewModel @Inject constructor(
             dailyLogDao.deleteAll()
             assessmentLogDao.deleteAll()
             streakDataStore.clear()
+            ReminderScheduler.cancel(context)
+            userProfileDao.saveProfile(
+                UserProfileEntity(
+                    currentRung = 1,
+                    phase = "introductory",
+                    rungStartDate = java.time.LocalDate.now(),
+                    dailyReminderHour = null,
+                    dailyReminderMinute = null,
+                    onboardingComplete = false
+                )
+            )
         }
     }
 
     fun exportData(uri: Uri) {
         viewModelScope.launch {
+            _exportState.value = ExportState.Loading
             try {
                 val profile = userProfileDao.getProfileOnce()
                 val logs = dailyLogDao.getAllLogsList()
@@ -96,9 +122,16 @@ class SettingsViewModel @Inject constructor(
                 val json = DataExporter.exportToJson(profile, logs, assessments, streak)
                 context.contentResolver.openOutputStream(uri)?.use { os ->
                     os.write(json.toByteArray(Charsets.UTF_8))
-                }
-            } catch (_: Exception) {}
+                } ?: throw Exception("Nao foi possivel abrir arquivo para escrita")
+                _exportState.value = ExportState.Done
+            } catch (e: Exception) {
+                _exportState.value = ExportState.Error(e.message ?: "Erro ao exportar")
+            }
         }
+    }
+
+    fun resetExportState() {
+        _exportState.value = ExportState.Idle
     }
 
     fun readImportData(uri: Uri) {
@@ -128,9 +161,15 @@ class SettingsViewModel @Inject constructor(
                     dailyLogDao.deleteAll()
                     assessmentLogDao.deleteAll()
                     streakDataStore.clear()
-                }
-                data.profile?.let { userProfileDao.saveProfile(it) }
-                if (replace) {
+                    val profileToSave = data.profile ?: UserProfileEntity(
+                        currentRung = 1,
+                        phase = "introductory",
+                        rungStartDate = java.time.LocalDate.now(),
+                        dailyReminderHour = null,
+                        dailyReminderMinute = null,
+                        onboardingComplete = false
+                    )
+                    userProfileDao.saveProfile(profileToSave)
                     dailyLogDao.insertAll(data.logs)
                     assessmentLogDao.insertAll(data.assessments)
                 } else {
@@ -141,9 +180,17 @@ class SettingsViewModel @Inject constructor(
                         } ?: imported
                     }
                     dailyLogDao.insertAll(mergedLogs)
-                    assessmentLogDao.insertAll(data.assessments)
+                    val existingAssessments = assessmentLogDao.getAllAssessmentsList()
+                    val existingKeys = existingAssessments.map { Triple(it.date, it.fromRung, it.toRung) }.toSet()
+                    val newAssessments = data.assessments.filter { a ->
+                        Triple(a.date, a.fromRung, a.toRung) !in existingKeys
+                    }
+                    assessmentLogDao.insertAll(newAssessments)
+                    data.profile?.let { userProfileDao.saveProfile(it) }
                 }
-                streakDataStore.updateStreakData(data.streak)
+                if (replace) {
+                    data.streak.let { streakDataStore.updateStreakData(it) }
+                }
                 pendingImport = null
                 _importState.value = ImportState.Done
             } catch (e: Exception) {

@@ -1,6 +1,8 @@
 package com.hackerfit.ui.screens.settings
 
+import android.Manifest
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -18,23 +20,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.hackerfit.PendingImportState
+import com.hackerfit.ui.navigation.MainViewModel
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     innerPadding: PaddingValues,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
+    val exportState by viewModel.exportState.collectAsStateWithLifecycle()
 
-    val pendingImportUri by PendingImportState.pendingUri.collectAsStateWithLifecycle()
+    val pendingImportUri by mainViewModel.pendingImportUri.collectAsStateWithLifecycle()
     LaunchedEffect(pendingImportUri) {
         if (pendingImportUri != null) {
-            PendingImportState.clear()
-            viewModel.readImportData(pendingImportUri!!)
+            mainViewModel.clearPendingImportUri()
+            viewModel.readImportData(Uri.parse(pendingImportUri))
         }
     }
 
@@ -51,6 +55,17 @@ fun SettingsScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let { viewModel.readImportData(it) }
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted: Boolean ->
+        if (granted) {
+            val state = uiState as? SettingsUiState.Success
+            if (state != null) {
+                viewModel.setReminderTime(state.hour, state.minute)
+            }
+        }
     }
 
     Scaffold(
@@ -226,6 +241,9 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.setReminderTime(timePickerState.hour, timePickerState.minute)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
                     showTimePicker = false
                 }) {
                     Text("Salvar")
@@ -341,5 +359,49 @@ fun SettingsScreen(
             )
         }
         ImportState.Idle -> {}
+    }
+
+    when (val expState = exportState) {
+        is ExportState.Loading -> {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Exportando...") },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text("Salvando dados...")
+                    }
+                },
+                confirmButton = {}
+            )
+        }
+        is ExportState.Done -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetExportState() },
+                title = { Text("Sucesso") },
+                text = { Text("Dados exportados com sucesso!") },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetExportState() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+        is ExportState.Error -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetExportState() },
+                title = { Text("Erro ao exportar") },
+                text = { Text(expState.message) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetExportState() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+        ExportState.Idle -> {}
     }
 }

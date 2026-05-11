@@ -3,6 +3,7 @@ package com.hackerfit.ui.screens.history
 import com.hackerfit.FakeAssessmentRepository
 import com.hackerfit.FakeDailyLogRepository
 import com.hackerfit.FakeStreakRepository
+import com.hackerfit.FakeUserProfileRepository
 import com.hackerfit.domain.model.DailyLog
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -17,6 +18,7 @@ class HistoryViewModelTest {
     private lateinit var dailyLogRepo: FakeDailyLogRepository
     private lateinit var assessmentRepo: FakeAssessmentRepository
     private lateinit var streakRepo: FakeStreakRepository
+    private lateinit var userProfileRepo: FakeUserProfileRepository
     private lateinit var viewModel: HistoryViewModel
     private val testDispatcher = StandardTestDispatcher()
 
@@ -25,10 +27,11 @@ class HistoryViewModelTest {
         dailyLogRepo = FakeDailyLogRepository()
         assessmentRepo = FakeAssessmentRepository()
         streakRepo = FakeStreakRepository()
+        userProfileRepo = FakeUserProfileRepository()
     }
 
     private fun createViewModel() {
-        viewModel = HistoryViewModel(dailyLogRepo, assessmentRepo, streakRepo)
+        viewModel = HistoryViewModel(dailyLogRepo, assessmentRepo, streakRepo, userProfileRepo)
     }
 
     @Test

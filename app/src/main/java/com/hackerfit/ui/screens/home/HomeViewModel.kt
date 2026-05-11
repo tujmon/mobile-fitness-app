@@ -50,26 +50,4 @@ class HomeViewModel @Inject constructor(
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState.Loading)
-
-    init {
-        ensureProfileExists()
-    }
-
-    private fun ensureProfileExists() {
-        viewModelScope.launch {
-            val existing = userProfileRepository.getProfile().first()
-            if (existing == null) {
-                userProfileRepository.saveProfile(
-                    UserProfile(
-                        currentRung = 1,
-                        phase = com.hackerfit.domain.model.Phase.INTRODUCTORY,
-                        rungStartDate = LocalDate.now(),
-                        dailyReminderHour = 8,
-                        dailyReminderMinute = 0,
-                        onboardingComplete = false
-                    )
-                )
-            }
-        }
-    }
 }

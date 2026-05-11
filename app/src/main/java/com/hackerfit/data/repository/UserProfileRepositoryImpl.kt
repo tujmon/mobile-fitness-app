@@ -1,5 +1,6 @@
 package com.hackerfit.data.repository
 
+import com.hackerfit.data.local.db.dao.AssessmentLogDao
 import com.hackerfit.data.local.db.dao.UserProfileDao
 import com.hackerfit.data.local.db.entity.UserProfileEntity
 import com.hackerfit.data.mapper.toDomain
@@ -14,7 +15,8 @@ import javax.inject.Singleton
 
 @Singleton
 class UserProfileRepositoryImpl @Inject constructor(
-    private val dao: UserProfileDao
+    private val dao: UserProfileDao,
+    private val assessmentLogDao: AssessmentLogDao
 ) : UserProfileRepository {
 
     override fun getProfile(): Flow<UserProfile?> {
@@ -49,5 +51,19 @@ class UserProfileRepositoryImpl @Inject constructor(
 
     override suspend fun clearReminderTime() {
         dao.clearReminderTime()
+    }
+
+    override suspend fun recalculateCurrentRung() {
+        val allAssessments = assessmentLogDao.getAllAssessmentsList().sortedBy { it.date }
+        var rung = 1
+        for (assessment in allAssessments) {
+            if (assessment.passed) {
+                rung = assessment.toRung.coerceIn(1, 48)
+            } else {
+                break
+            }
+        }
+        val phase = if (rung <= 15) "introductory" else "lifetime"
+        dao.updateRung(rung, phase, LocalDate.now())
     }
 }

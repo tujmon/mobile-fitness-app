@@ -20,7 +20,9 @@ fun ExerciseDetailScreen(
     exerciseIndex: Int,
     onBack: () -> Unit
 ) {
-    val exercise = FitnessLadder.exercises[exerciseIndex]
+    val exercise = FitnessLadder.exercises.getOrElse(exerciseIndex) {
+        FitnessLadder.exercises.first()
+    }
 
     Scaffold(
         topBar = {

@@ -250,14 +250,15 @@ private fun HomeContent(
                     else -> 0
                 }
                 val extra = if (idx == 4) rung.runJumpExtraSteps else 0
+                val isIntro = FitnessLadder.isIntroductory(state.currentRung)
                 val workoutEx = WorkoutExercise(
                     index = idx,
                     name = exercise.name,
-                    description = exercise.introductoryDescription,
+                    description = if (isIntro) exercise.introductoryDescription else exercise.lifetimeDescription,
                     isRunJump = idx == 4,
                     targetReps = target,
                     sets = target,
-                    jumpingJacksPerSet = 25,
+                    jumpingJacksPerSet = FitnessLadder.getJumpingJacksPerSet(state.currentRung),
                     extraSteps = extra
                 )
                 ExerciseCard(exercise = workoutEx, targetReps = target)

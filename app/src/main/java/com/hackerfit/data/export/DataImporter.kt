@@ -7,6 +7,10 @@ import com.hackerfit.domain.model.StreakData
 import org.json.JSONObject
 import java.time.LocalDate
 
+private const val MIN_RUNG = 1
+private const val MAX_RUNG = 48
+private val VALID_PHASES = setOf("introductory", "lifetime")
+
 object DataImporter {
 
     data class ImportedData(
@@ -23,9 +27,12 @@ object DataImporter {
         if (version != 1) throw IllegalArgumentException("Versao nao suportada: $version")
 
         val profile = root.optJSONObject("profile")?.let { p ->
+            val rung = p.getInt("currentRung").coerceIn(MIN_RUNG, MAX_RUNG)
+            val rawPhase = p.getString("phase")
+            val phase = if (rawPhase in VALID_PHASES) rawPhase else "introductory"
             UserProfileEntity(
-                currentRung = p.getInt("currentRung"),
-                phase = p.getString("phase"),
+                currentRung = rung,
+                phase = phase,
                 rungStartDate = LocalDate.parse(p.getString("rungStartDate")),
                 dailyReminderHour = if (p.isNull("dailyReminderHour")) null else p.getInt("dailyReminderHour"),
                 dailyReminderMinute = if (p.isNull("dailyReminderMinute")) null else p.getInt("dailyReminderMinute"),
@@ -48,7 +55,7 @@ object DataImporter {
                 val obj = arr.getJSONObject(i)
                 DailyLogEntity(
                     date = LocalDate.parse(obj.getString("date")),
-                    rung = obj.getInt("rung"),
+                    rung = obj.getInt("rung").coerceIn(MIN_RUNG, MAX_RUNG),
                     completed = obj.getBoolean("completed"),
                     completedAt = if (obj.isNull("completedAt")) null
                         else LocalDate.parse(obj.getString("completedAt"))
@@ -61,8 +68,8 @@ object DataImporter {
                 val obj = arr.getJSONObject(i)
                 AssessmentLogEntity(
                     date = LocalDate.parse(obj.getString("date")),
-                    fromRung = obj.getInt("fromRung"),
-                    toRung = obj.getInt("toRung"),
+                    fromRung = obj.getInt("fromRung").coerceIn(MIN_RUNG, MAX_RUNG),
+                    toRung = obj.getInt("toRung").coerceIn(MIN_RUNG, MAX_RUNG),
                     passed = obj.getBoolean("passed"),
                     notes = obj.optString("notes").takeIf { it.isNotEmpty() }
                 )

@@ -35,6 +35,14 @@ fun AssessmentScreen(
                 CircularProgressIndicator()
             }
         }
+        is AssessmentUiState.MaxRungReached -> {
+            Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    text = "Voc\u00ea j\u00e1 alcan\u00e7ou o degrau m\u00e1ximo!",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+            }
+        }
         is AssessmentUiState.Ready -> {
             AssessmentReadyContent(
                 nextRung = state.nextRung,
@@ -57,13 +65,37 @@ fun AssessmentScreen(
                 nextRung = state.nextRung,
                 onEasy = {
                     viewModel.evaluate(true)
-                    onFinish()
                 },
                 onHard = {
                     viewModel.evaluate(false)
-                    onFinish()
                 }
             )
+        }
+        is AssessmentUiState.Saving -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Salvando avalia\u00e7\u00e3o...")
+                }
+            }
+        }
+        is AssessmentUiState.Done -> {
+            LaunchedEffect(Unit) { onFinish() }
+        }
+        is AssessmentUiState.Error -> {
+            Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onFinish) {
+                        Text("Voltar")
+                    }
+                }
+            }
         }
     }
 }

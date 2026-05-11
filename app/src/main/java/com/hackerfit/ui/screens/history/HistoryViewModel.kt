@@ -7,6 +7,7 @@ import com.hackerfit.domain.model.DailyLog
 import com.hackerfit.domain.repository.AssessmentRepository
 import com.hackerfit.domain.repository.DailyLogRepository
 import com.hackerfit.domain.repository.StreakRepository
+import com.hackerfit.domain.repository.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -55,7 +56,8 @@ sealed interface HistoryUiState {
 class HistoryViewModel @Inject constructor(
     private val dailyLogRepository: DailyLogRepository,
     private val assessmentRepository: AssessmentRepository,
-    private val streakRepository: StreakRepository
+    private val streakRepository: StreakRepository,
+    private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
@@ -119,12 +121,14 @@ class HistoryViewModel @Inject constructor(
     fun deleteLog(id: Long) {
         viewModelScope.launch {
             dailyLogRepository.deleteLog(id)
+            streakRepository.recalculateStreak()
         }
     }
 
     fun deleteAssessment(id: Long) {
         viewModelScope.launch {
             assessmentRepository.deleteAssessment(id)
+            userProfileRepository.recalculateCurrentRung()
         }
     }
 
@@ -139,6 +143,7 @@ class HistoryViewModel @Inject constructor(
                     completedAt = if (completed) date else null
                 )
             )
+            streakRepository.recalculateStreak()
         }
     }
 
@@ -161,6 +166,7 @@ class HistoryViewModel @Inject constructor(
                     notes = notes
                 )
             )
+            userProfileRepository.recalculateCurrentRung()
         }
     }
 }

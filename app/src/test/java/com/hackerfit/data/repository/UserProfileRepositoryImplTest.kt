@@ -1,8 +1,10 @@
 package com.hackerfit.data.repository
 
+import com.hackerfit.data.local.db.dao.AssessmentLogDao
 import com.hackerfit.data.local.db.dao.UserProfileDao
 import com.hackerfit.data.local.db.entity.UserProfileEntity
 import com.hackerfit.domain.model.Phase
+import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -53,6 +55,7 @@ class UserProfileRepositoryImplTest {
     }
 
     private lateinit var repository: UserProfileRepositoryImpl
+    private val fakeAssessmentLogDao = mockk<AssessmentLogDao>(relaxed = true)
 
     @Before
     fun setup() {
@@ -61,7 +64,7 @@ class UserProfileRepositoryImplTest {
         completedOnboarding = false
         reminderTime = null
         reminderCleared = false
-        repository = UserProfileRepositoryImpl(fakeDao)
+        repository = UserProfileRepositoryImpl(fakeDao, fakeAssessmentLogDao)
     }
 
     @Test

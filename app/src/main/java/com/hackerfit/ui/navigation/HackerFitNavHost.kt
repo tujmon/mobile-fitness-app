@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.hackerfit.domain.constants.FitnessLadder
 import com.hackerfit.ui.screens.assessment.AssessmentScreen
 import com.hackerfit.ui.screens.exercise.ExerciseDetailScreen
 import com.hackerfit.ui.screens.history.HistoryScreen
@@ -18,15 +19,18 @@ import com.hackerfit.ui.screens.workout.WorkoutScreen
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    innerPadding: PaddingValues
+    innerPadding: PaddingValues,
+    startDestination: String,
+    onOnboardingComplete: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
-        startDestination = "onboarding"
+        startDestination = startDestination
     ) {
         composable("onboarding") {
             OnboardingScreen(
                 onComplete = {
+                    onOnboardingComplete()
                     navController.navigate("home") {
                         popUpTo("onboarding") { inclusive = true }
                     }
@@ -59,7 +63,8 @@ fun AppNavHost(
             )
         }
         composable("exercise/{index}") { backStackEntry ->
-            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: 0
+            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull()
+                ?.coerceIn(0, FitnessLadder.exercises.lastIndex) ?: 0
             ExerciseDetailScreen(
                 exerciseIndex = index,
                 onBack = { navController.popBackStack() }
