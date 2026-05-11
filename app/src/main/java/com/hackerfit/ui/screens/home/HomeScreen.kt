@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -37,7 +38,7 @@ fun HomeScreen(
     innerPadding: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
         is HomeUiState.Loading -> {
@@ -70,12 +71,18 @@ private fun HomeContent(
     onStartAssessment: () -> Unit,
     onViewLadder: () -> Unit
 ) {
-    val rung = FitnessLadder.getRung(state.currentRung)
-    val phase = if (FitnessLadder.isIntroductory(state.currentRung)) "Escada Introdut\u00f3ria" else "Escada Vital\u00edcia"
-    val daysOnRung = ChronoUnit.DAYS.between(state.rungStartDate, LocalDate.now()) + 1
+    val today = remember { LocalDate.now() }
+    val rung = remember(state.currentRung) { FitnessLadder.getRung(state.currentRung) }
+    val phase = remember(state.currentRung) {
+        if (FitnessLadder.isIntroductory(state.currentRung)) "Escada Introdut\u00f3ria" else "Escada Vital\u00edcia"
+    }
+    val daysOnRung = remember(state.rungStartDate) {
+        ChronoUnit.DAYS.between(state.rungStartDate, today) + 1
+    }
     val effectiveDaysOnRung = if (!state.completedToday && daysOnRung == 1L) 0L else daysOnRung
+    val exercisesCompleted = if (state.completedToday) 5 else 0
     val canAssess = daysOnRung >= 5 && !state.completedToday
-    val progress = (daysOnRung.coerceAtMost(5) / 5f).coerceIn(0f, 1f)
+    val progress = (exercisesCompleted / 5f).coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(600),
@@ -128,7 +135,7 @@ private fun HomeContent(
                         )
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "$effectiveDaysOnRung",
+                                text = "$exercisesCompleted",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary

@@ -35,20 +35,16 @@ class HomeViewModel @Inject constructor(
 
     val uiState: StateFlow<HomeUiState> = combine(
         userProfileRepository.getProfile(),
-        streakRepository.getStreakData()
-    ) { profile, streak ->
+        streakRepository.getStreakData(),
+        dailyLogRepository.observeCompletedToday()
+    ) { profile, streak, completedToday ->
         if (profile == null) {
             HomeUiState.NotOnboarded
         } else {
-            val completed = try {
-                dailyLogRepository.hasCompletedToday()
-            } catch (_: Exception) {
-                false
-            }
             HomeUiState.Success(
                 currentRung = profile.currentRung,
                 rungStartDate = profile.rungStartDate,
-                completedToday = completed,
+                completedToday = completedToday,
                 streakCount = streak.streakCount,
                 freezesBanked = streak.freezesBanked
             )

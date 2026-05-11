@@ -10,6 +10,7 @@ interface DailyLogRepository {
     suspend fun getLogForDate(date: LocalDate): DailyLog?
     suspend fun saveLog(log: DailyLog)
     suspend fun hasCompletedToday(): Boolean
+    fun observeCompletedToday(): Flow<Boolean>
     suspend fun getConsecutiveDays(): Int
     suspend fun deleteLog(id: Long)
 }

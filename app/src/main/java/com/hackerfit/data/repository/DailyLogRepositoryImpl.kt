@@ -44,6 +44,10 @@ class DailyLogRepositoryImpl @Inject constructor(
         return dao.hasCompletedOnDate(LocalDate.now()) > 0
     }
 
+    override fun observeCompletedToday(): Flow<Boolean> {
+        return dao.observeCompletedOnDate(LocalDate.now())
+    }
+
     override suspend fun getConsecutiveDays(): Int {
         var count = 0
         var date = LocalDate.now()

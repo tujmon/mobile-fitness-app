@@ -22,6 +22,9 @@ interface DailyLogDao {
     @Query("SELECT COUNT(*) FROM daily_log WHERE date = :date AND completed = 1")
     suspend fun hasCompletedOnDate(date: LocalDate): Int
 
+    @Query("SELECT EXISTS(SELECT 1 FROM daily_log WHERE date = :date AND completed = 1)")
+    fun observeCompletedOnDate(date: LocalDate): Flow<Boolean>
+
     @Query("SELECT * FROM daily_log WHERE completed = 1 ORDER BY date DESC")
     fun getCompletedLogs(): Flow<List<DailyLogEntity>>
 

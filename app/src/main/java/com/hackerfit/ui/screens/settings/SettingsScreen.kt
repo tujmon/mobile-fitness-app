@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -26,10 +27,10 @@ fun SettingsScreen(
     innerPadding: PaddingValues,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val importState by viewModel.importState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val importState by viewModel.importState.collectAsStateWithLifecycle()
 
-    val pendingImportUri by PendingImportState.pendingUri.collectAsState()
+    val pendingImportUri by PendingImportState.pendingUri.collectAsStateWithLifecycle()
     LaunchedEffect(pendingImportUri) {
         if (pendingImportUri != null) {
             PendingImportState.clear()

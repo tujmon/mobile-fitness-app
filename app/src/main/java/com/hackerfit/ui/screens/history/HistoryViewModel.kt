@@ -72,6 +72,9 @@ class HistoryViewModel @Inject constructor(
                 _selectedMonth,
                 _selectedDay
             ) { logs, assessments, month, day ->
+                val monthLogs = logs.filter {
+                    YearMonth.from(it.date) == month
+                }
                 val logMap = logs.associate {
                     it.date to HistoryUiState.RecentLog(it.id, it.date, it.rung, it.completed)
                 }
@@ -79,9 +82,6 @@ class HistoryViewModel @Inject constructor(
                     logMap[d]?.let { log ->
                         HistoryUiState.DayDetail(log.id, d, log.rung, log.completed)
                     }
-                }
-                val monthLogs = logs.filter {
-                    YearMonth.from(it.date) == month
                 }
 
                 HistoryUiState.Success(

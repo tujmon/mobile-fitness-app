@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,7 +62,7 @@ fun HistoryScreen(
     innerPadding: PaddingValues,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showBottomSheet by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState()
     var dialogState by remember { mutableStateOf<HistoryDialog>(HistoryDialog.None) }
@@ -174,37 +175,88 @@ fun HistoryScreen(
     }
 
     val successState = uiState as? HistoryUiState.Success
-    if (showBottomSheet && successState?.dayDetail != null) {
-        val detail = successState.dayDetail
+
+    HistoryBottomSheet(
+        visible = showBottomSheet && successState?.dayDetail != null,
+        detail = successState?.dayDetail,
+        sheetState = bottomSheetState,
+        onEdit = { detail ->
+            dialogState = HistoryDialog.EditLog(
+                id = detail.id,
+                date = detail.date,
+                rung = detail.rung,
+                completed = detail.completed
+            )
+            showBottomSheet = false
+        },
+        onDelete = { detail ->
+            dialogState = HistoryDialog.ConfirmDeleteLog(
+                id = detail.id,
+                date = detail.date
+            )
+            showBottomSheet = false
+        },
+        onDismiss = {
+            showBottomSheet = false
+            viewModel.selectDay(null)
+        }
+    )
+
+    HistoryDialogs(
+        dialogState = dialogState,
+        onConfirmEditLog = { id, date, rung, completed ->
+            viewModel.updateLog(id, date, rung, completed)
+            dialogState = HistoryDialog.None
+        },
+        onConfirmEditAssessment = { id, date, fromRung, toRung, passed, notes ->
+            viewModel.updateAssessment(id, date, fromRung, toRung, passed, notes)
+            dialogState = HistoryDialog.None
+        },
+        onConfirmDeleteLog = { id ->
+            viewModel.deleteLog(id)
+            dialogState = HistoryDialog.None
+        },
+        onConfirmDeleteAssessment = { id ->
+            viewModel.deleteAssessment(id)
+            dialogState = HistoryDialog.None
+        },
+        onDismiss = { dialogState = HistoryDialog.None }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HistoryBottomSheet(
+    visible: Boolean,
+    detail: HistoryUiState.DayDetail?,
+    sheetState: SheetState,
+    onEdit: (HistoryUiState.DayDetail) -> Unit,
+    onDelete: (HistoryUiState.DayDetail) -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (visible && detail != null) {
         ModalBottomSheet(
-            onDismissRequest = {
-                showBottomSheet = false
-                viewModel.selectDay(null)
-            },
-            sheetState = bottomSheetState
+            onDismissRequest = onDismiss,
+            sheetState = sheetState
         ) {
             DayDetailContent(
                 detail = detail,
-                onEdit = {
-                    dialogState = HistoryDialog.EditLog(
-                        id = detail.id,
-                        date = detail.date,
-                        rung = detail.rung,
-                        completed = detail.completed
-                    )
-                    showBottomSheet = false
-                },
-                onDelete = {
-                    dialogState = HistoryDialog.ConfirmDeleteLog(
-                        id = detail.id,
-                        date = detail.date
-                    )
-                    showBottomSheet = false
-                }
+                onEdit = { onEdit(detail) },
+                onDelete = { onDelete(detail) }
             )
         }
     }
+}
 
+@Composable
+private fun HistoryDialogs(
+    dialogState: HistoryDialog,
+    onConfirmEditLog: (Long, LocalDate, Int, Boolean) -> Unit,
+    onConfirmEditAssessment: (Long, LocalDate, Int, Int, Boolean, String?) -> Unit,
+    onConfirmDeleteLog: (Long) -> Unit,
+    onConfirmDeleteAssessment: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
     when (val dialog = dialogState) {
         is HistoryDialog.EditLog -> {
             EditLogDialog(
@@ -212,10 +264,9 @@ fun HistoryScreen(
                 initialCompleted = dialog.completed,
                 date = dialog.date,
                 onConfirm = { rung, completed ->
-                    viewModel.updateLog(dialog.id, dialog.date, rung, completed)
-                    dialogState = HistoryDialog.None
+                    onConfirmEditLog(dialog.id, dialog.date, rung, completed)
                 },
-                onDismiss = { dialogState = HistoryDialog.None }
+                onDismiss = onDismiss
             )
         }
         is HistoryDialog.EditAssessment -> {
@@ -226,61 +277,48 @@ fun HistoryScreen(
                 initialNotes = dialog.notes,
                 date = dialog.date,
                 onConfirm = { fromRung, toRung, passed, notes ->
-                    viewModel.updateAssessment(
-                        dialog.id, dialog.date, fromRung, toRung, passed, notes
-                    )
-                    dialogState = HistoryDialog.None
+                    onConfirmEditAssessment(dialog.id, dialog.date, fromRung, toRung, passed, notes)
                 },
-                onDismiss = { dialogState = HistoryDialog.None }
+                onDismiss = onDismiss
             )
         }
         is HistoryDialog.ConfirmDeleteLog -> {
             AlertDialog(
-                onDismissRequest = { dialogState = HistoryDialog.None },
+                onDismissRequest = onDismiss,
                 title = { Text("Excluir treino?") },
                 text = {
                     Text("Excluir o treino de ${dialog.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}? Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita.")
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = {
-                            viewModel.deleteLog(dialog.id)
-                            dialogState = HistoryDialog.None
-                        },
+                        onClick = { onConfirmDeleteLog(dialog.id) },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) { Text("Excluir") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { dialogState = HistoryDialog.None }) {
-                        Text("Cancelar")
-                    }
+                    TextButton(onClick = onDismiss) { Text("Cancelar") }
                 }
             )
         }
         is HistoryDialog.ConfirmDeleteAssessment -> {
             AlertDialog(
-                onDismissRequest = { dialogState = HistoryDialog.None },
+                onDismissRequest = onDismiss,
                 title = { Text("Excluir avalia\u00e7\u00e3o?") },
                 text = {
                     Text("Excluir a avalia\u00e7\u00e3o de ${dialog.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}? Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita.")
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = {
-                            viewModel.deleteAssessment(dialog.id)
-                            dialogState = HistoryDialog.None
-                        },
+                        onClick = { onConfirmDeleteAssessment(dialog.id) },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) { Text("Excluir") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { dialogState = HistoryDialog.None }) {
-                        Text("Cancelar")
-                    }
+                    TextButton(onClick = onDismiss) { Text("Cancelar") }
                 }
             )
         }

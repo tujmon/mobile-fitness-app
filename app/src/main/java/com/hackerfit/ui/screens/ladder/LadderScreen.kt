@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.hackerfit.domain.constants.FitnessLadder
 import com.hackerfit.domain.constants.RungData
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +33,7 @@ fun LadderScreen(
     onBack: () -> Unit,
     viewModel: LadderViewModel = hiltViewModel()
 ) {
-    val currentRung by viewModel.currentRung.collectAsState()
+    val currentRung by viewModel.currentRung.collectAsStateWithLifecycle()
     val introRungs = FitnessLadder.introductoryLadder
     val lifetimeRungs = FitnessLadder.lifetimeLadder
 

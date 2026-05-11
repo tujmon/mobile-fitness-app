@@ -75,6 +75,9 @@ class FakeDailyLogRepository : DailyLogRepository {
     override suspend fun hasCompletedToday(): Boolean =
         logsState.value.any { it.date == LocalDate.now() && it.completed }
 
+    override fun observeCompletedToday(): Flow<Boolean> =
+        logsState.map { logs -> logs.any { it.date == LocalDate.now() && it.completed } }
+
     override suspend fun getConsecutiveDays(): Int {
         var count = 0
         var date = LocalDate.now()

@@ -34,6 +34,9 @@ class DailyLogRepositoryImplTest {
         override suspend fun hasCompletedOnDate(date: LocalDate) =
             logsFlow.value.count { it.date == date && it.completed }
 
+        override fun observeCompletedOnDate(date: LocalDate) =
+            logsFlow.map { logs -> logs.any { it.date == date && it.completed } }
+
         override fun getCompletedLogs() = logsFlow.map { logs -> logs.filter { it.completed } }
 
         override suspend fun deleteAll() {

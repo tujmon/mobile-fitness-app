@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "HackerFit"
 include(":app")
+include(":baselineprofile")
+include(":macrobenchmark")
