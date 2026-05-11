@@ -11,6 +11,11 @@ private const val MIN_RUNG = 1
 private const val MAX_RUNG = 48
 private val VALID_PHASES = setOf("introductory", "lifetime")
 
+private fun requireValidRung(value: Int, label: String = "degrau"): Int {
+    require(value in MIN_RUNG..MAX_RUNG) { "$label invalido: $value" }
+    return value
+}
+
 object DataImporter {
 
     data class ImportedData(
@@ -56,7 +61,7 @@ object DataImporter {
                 val obj = arr.getJSONObject(i)
                 DailyLogEntity(
                     date = LocalDate.parse(obj.getString("date")),
-                    rung = obj.getInt("rung"),
+                    rung = requireValidRung(obj.getInt("rung"), "rung do log"),
                     completed = obj.getBoolean("completed"),
                     completedAt = if (obj.isNull("completedAt")) null
                         else LocalDate.parse(obj.getString("completedAt"))
@@ -69,8 +74,8 @@ object DataImporter {
                 val obj = arr.getJSONObject(i)
                 AssessmentLogEntity(
                     date = LocalDate.parse(obj.getString("date")),
-                    fromRung = obj.getInt("fromRung"),
-                    toRung = obj.getInt("toRung"),
+                    fromRung = requireValidRung(obj.getInt("fromRung"), "fromRung"),
+                    toRung = requireValidRung(obj.getInt("toRung"), "toRung"),
                     passed = obj.getBoolean("passed"),
                     notes = obj.optString("notes").takeIf { it.isNotEmpty() }
                 )

@@ -199,6 +199,12 @@ class SettingsViewModel @Inject constructor(
                 }
                 if (replace) {
                     data.streak.let { streakDataStore.updateStreakData(it) }
+                    val savedProfile = userProfileDao.getProfileOnce()
+                    if (savedProfile?.dailyReminderHour != null) {
+                        ReminderScheduler.schedule(context, savedProfile.dailyReminderHour, savedProfile.dailyReminderMinute ?: 0)
+                    } else {
+                        ReminderScheduler.cancel(context)
+                    }
                 } else {
                     userProfileRepository.recalculateCurrentRung()
                 }

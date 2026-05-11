@@ -24,7 +24,8 @@ fun AppNavHost(
     navController: NavHostController,
     innerPadding: PaddingValues,
     startDestination: String,
-    onOnboardingComplete: suspend () -> Unit = {}
+    onOnboardingComplete: suspend () -> Unit = {},
+    mainViewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
 
@@ -89,7 +90,10 @@ fun AppNavHost(
             HistoryScreen(innerPadding = innerPadding)
         }
         composable("settings") {
-            SettingsScreen(innerPadding = innerPadding)
+            SettingsScreen(
+                innerPadding = innerPadding,
+                mainViewModel = mainViewModel
+            )
         }
     }
 }

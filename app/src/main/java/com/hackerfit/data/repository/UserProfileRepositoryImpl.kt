@@ -37,6 +37,7 @@ class UserProfileRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateRung(rungNumber: Int) {
+        require(rungNumber in 1..48) { "Degrau invalido: $rungNumber" }
         val phase = if (rungNumber <= 15) "introductory" else "lifetime"
         dao.updateRung(rungNumber, phase, LocalDate.now())
     }
@@ -58,8 +59,8 @@ class UserProfileRepositoryImpl @Inject constructor(
         var rung = 1
         var rungDate: LocalDate? = null
         for (assessment in allAssessments) {
-            if (assessment.passed && assessment.fromRung == rung) {
-                rung = assessment.toRung.coerceIn(1, 48)
+            if (assessment.passed && assessment.fromRung == rung && assessment.toRung == rung + 1) {
+                rung = assessment.toRung
                 rungDate = assessment.date
             }
         }

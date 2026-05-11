@@ -95,14 +95,14 @@ class MainViewModel @Inject constructor(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HackerFitNavHost(
-    viewModel: MainViewModel = hiltViewModel()
+    mainViewModel: MainViewModel
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val scope = rememberCoroutineScope()
 
-    val profile by viewModel.userProfileRepository.getProfile().collectAsState(initial = null)
+    val profile by mainViewModel.userProfileRepository.getProfile().collectAsState(initial = null)
     val startDestination = remember(profile) {
         val p = profile
         when {
@@ -115,7 +115,7 @@ fun HackerFitNavHost(
     val showBottomBar = bottomNavItems.any { it.route == currentDestination?.route }
 
     LaunchedEffect(Unit) {
-        viewModel.pendingImportUri
+        mainViewModel.pendingImportUri
             .filterNotNull()
             .collect {
                 delay(800)
@@ -174,8 +174,9 @@ fun HackerFitNavHost(
             innerPadding = innerPadding,
             startDestination = startDestination,
             onOnboardingComplete = {
-                viewModel.userProfileRepository.completeOnboarding()
-            }
+                mainViewModel.userProfileRepository.completeOnboarding()
+            },
+            mainViewModel = mainViewModel
         )
     }
 }

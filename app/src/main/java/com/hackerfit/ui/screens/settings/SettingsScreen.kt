@@ -27,8 +27,8 @@ import java.util.Calendar
 @Composable
 fun SettingsScreen(
     innerPadding: PaddingValues,
-    viewModel: SettingsViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel = hiltViewModel()
+    mainViewModel: MainViewModel,
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
@@ -59,11 +59,15 @@ fun SettingsScreen(
         uri?.let { viewModel.readImportData(it) }
     }
 
+    var showPermissionDeniedDialog by remember { mutableStateOf(false) }
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
         if (granted) {
             viewModel.setReminderTime(pendingReminderHour, pendingReminderMinute)
+        } else {
+            showPermissionDeniedDialog = true
         }
     }
 
@@ -405,5 +409,18 @@ fun SettingsScreen(
             )
         }
         ExportState.Idle -> {}
+    }
+
+    if (showPermissionDeniedDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDeniedDialog = false },
+            title = { Text("Permiss\u00e3o negada") },
+            text = { Text("O lembrete n\u00e3o foi ativado porque a permiss\u00e3o de notifica\u00e7\u00e3o foi negada. Voc\u00ea pode ativ\u00e1-la nas configura\u00e7\u00f5es do sistema.") },
+            confirmButton = {
+                TextButton(onClick = { showPermissionDeniedDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
