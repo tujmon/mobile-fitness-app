@@ -120,6 +120,7 @@ fun HackerFitNavHost(
             mainViewModel.userProfileRepository.getProfile().filterNotNull()
         ) { uri, _ -> uri }
             .collect {
+                mainViewModel.clearPendingImportUri()
                 navController.navigate("settings") {
                     popUpTo(navController.graph.findStartDestination().id) {
                         saveState = true

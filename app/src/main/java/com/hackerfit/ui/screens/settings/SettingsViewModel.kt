@@ -60,7 +60,7 @@ private data class AssessmentDedupKey(
 )
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+open class SettingsViewModel @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
     private val userProfileDao: UserProfileDao,
     private val dailyLogDao: DailyLogDao,
@@ -175,7 +175,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val data = pendingImport ?: return@launch
             try {
-                database.withTransaction {
+                runInTransaction {
                     if (replace) {
                         dailyLogDao.deleteAll()
                         assessmentLogDao.deleteAll()
@@ -247,8 +247,12 @@ class SettingsViewModel @Inject constructor(
         _importState.value = ImportState.Idle
     }
 
-    private fun hasNotificationPermission(): Boolean {
+    protected open fun hasNotificationPermission(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
         return ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    }
+
+    protected open suspend fun runInTransaction(block: suspend () -> Unit) {
+        database.withTransaction(block)
     }
 }
