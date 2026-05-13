@@ -34,6 +34,7 @@ import com.hackerfit.domain.model.Phase
 import com.hackerfit.domain.model.UserProfile
 import com.hackerfit.domain.repository.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -114,10 +115,11 @@ fun HackerFitNavHost(
     val showBottomBar = bottomNavItems.any { it.route == currentDestination?.route }
 
     LaunchedEffect(Unit) {
-        mainViewModel.pendingImportUri
-            .filterNotNull()
+        combine(
+            mainViewModel.pendingImportUri.filterNotNull(),
+            mainViewModel.userProfileRepository.getProfile().filterNotNull()
+        ) { uri, _ -> uri }
             .collect {
-                startDestination ?: return@collect
                 navController.navigate("settings") {
                     popUpTo(navController.graph.findStartDestination().id) {
                         saveState = true

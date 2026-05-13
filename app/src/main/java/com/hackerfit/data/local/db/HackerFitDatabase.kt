@@ -18,7 +18,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             """
             DELETE FROM daily_log
             WHERE id NOT IN (
-                SELECT MAX(id) FROM daily_log GROUP BY date
+                SELECT id
+                FROM (
+                    SELECT id, date
+                    FROM daily_log
+                    ORDER BY completed DESC, id DESC
+                )
+                GROUP BY date
             )
             """.trimIndent()
         )

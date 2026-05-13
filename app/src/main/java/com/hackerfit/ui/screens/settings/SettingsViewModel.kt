@@ -10,6 +10,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hackerfit.data.export.DataExporter
 import com.hackerfit.data.export.DataImporter
+import com.hackerfit.data.local.db.HackerFitDatabase
+import androidx.room.withTransaction
 import com.hackerfit.data.local.db.dao.AssessmentLogDao
 import com.hackerfit.data.local.db.dao.DailyLogDao
 import com.hackerfit.data.local.db.dao.UserProfileDao
@@ -64,6 +66,7 @@ class SettingsViewModel @Inject constructor(
     private val assessmentLogDao: AssessmentLogDao,
     private val streakDataStore: StreakDataStore,
     private val streakRepository: StreakRepository,
+    private val database: HackerFitDatabase,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -171,45 +174,52 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val data = pendingImport ?: return@launch
             try {
-                if (replace) {
-                    dailyLogDao.deleteAll()
-                    assessmentLogDao.deleteAll()
-                    streakDataStore.clear()
-                    val profileToSave = data.profile ?: UserProfileEntity(
-                        currentRung = 1,
-                        phase = "introductory",
-                        rungStartDate = java.time.LocalDate.now(),
-                        dailyReminderHour = null,
-                        dailyReminderMinute = null,
-                        onboardingComplete = false
-                    )
-                    userProfileDao.saveProfile(profileToSave)
-                    dailyLogDao.insertAll(data.logs)
-                    assessmentLogDao.insertAll(data.assessments)
-                } else {
-                    val existingLogs = dailyLogDao.getAllLogsList().associateBy { it.date }
-                    val mergedLogs = data.logs.map { imported ->
-                        existingLogs[imported.date]?.let { existing ->
-                            if (existing.completed) existing else imported
-                        } ?: imported
+                database.withTransaction {
+                    if (replace) {
+                        dailyLogDao.deleteAll()
+                        assessmentLogDao.deleteAll()
+                        val profileToSave = data.profile ?: UserProfileEntity(
+                            currentRung = 1,
+                            phase = "introductory",
+                            rungStartDate = java.time.LocalDate.now(),
+                            dailyReminderHour = null,
+                            dailyReminderMinute = null,
+                            onboardingComplete = false
+                        )
+                        userProfileDao.saveProfile(profileToSave)
+                        dailyLogDao.insertAll(data.logs)
+                        assessmentLogDao.insertAll(data.assessments)
+                    } else {
+                        val existingLogs = dailyLogDao.getAllLogsList().associateBy { it.date }
+                        val mergedLogs = data.logs.map { imported ->
+                            existingLogs[imported.date]?.let { existing ->
+                                if (existing.completed) existing else imported
+                            } ?: imported
+                        }
+                        dailyLogDao.insertAll(mergedLogs)
+                        val existingAssessments = assessmentLogDao.getAllAssessmentsList()
+                        val existingKeys = existingAssessments.map {
+                            AssessmentDedupKey(it.date, it.fromRung, it.toRung, it.passed)
+                        }.toSet()
+                        val newAssessments = data.assessments.filter { a ->
+                            AssessmentDedupKey(a.date, a.fromRung, a.toRung, a.passed) !in existingKeys
+                        }
+                        assessmentLogDao.insertAll(newAssessments)
                     }
-                    dailyLogDao.insertAll(mergedLogs)
-                    val existingAssessments = assessmentLogDao.getAllAssessmentsList()
-                    val existingKeys = existingAssessments.map {
-                        AssessmentDedupKey(it.date, it.fromRung, it.toRung, it.passed)
-                    }.toSet()
-                    val newAssessments = data.assessments.filter { a ->
-                        AssessmentDedupKey(a.date, a.fromRung, a.toRung, a.passed) !in existingKeys
-                    }
-                    assessmentLogDao.insertAll(newAssessments)
                 }
                 if (replace) {
+                    streakDataStore.clear()
                     data.streak.let { streakDataStore.updateStreakData(it) }
                     streakRepository.recalculateStreak()
                     val savedProfile = userProfileDao.getProfileOnce()
-                    if (savedProfile?.dailyReminderHour != null && hasNotificationPermission()) {
-                        ReminderScheduler.schedule(context, savedProfile.dailyReminderHour, savedProfile.dailyReminderMinute ?: 0)
-                    } else if (savedProfile?.dailyReminderHour == null) {
+                    if (savedProfile?.dailyReminderHour != null) {
+                        if (hasNotificationPermission()) {
+                            ReminderScheduler.schedule(context, savedProfile.dailyReminderHour, savedProfile.dailyReminderMinute ?: 0)
+                        } else {
+                            userProfileRepository.clearReminderTime()
+                            ReminderScheduler.cancel(context)
+                        }
+                    } else {
                         ReminderScheduler.cancel(context)
                     }
                 } else {
