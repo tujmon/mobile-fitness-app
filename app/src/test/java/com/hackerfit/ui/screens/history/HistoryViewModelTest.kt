@@ -5,8 +5,12 @@ import com.hackerfit.FakeDailyLogRepository
 import com.hackerfit.FakeStreakRepository
 import com.hackerfit.FakeUserProfileRepository
 import com.hackerfit.domain.model.DailyLog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -24,10 +28,16 @@ class HistoryViewModelTest {
 
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         dailyLogRepo = FakeDailyLogRepository()
         assessmentRepo = FakeAssessmentRepository()
         streakRepo = FakeStreakRepository()
         userProfileRepo = FakeUserProfileRepository()
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     private fun createViewModel() {

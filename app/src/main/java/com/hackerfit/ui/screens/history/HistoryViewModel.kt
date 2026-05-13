@@ -133,6 +133,7 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun updateLog(id: Long, date: LocalDate, rung: Int, completed: Boolean) {
+        require(rung in 1..48) { "Degrau invalido: $rung" }
         viewModelScope.launch {
             dailyLogRepository.saveLog(
                 DailyLog(
@@ -155,6 +156,9 @@ class HistoryViewModel @Inject constructor(
         passed: Boolean,
         notes: String?
     ) {
+        require(fromRung in 1..48) { "fromRung invalido: $fromRung" }
+        require(toRung in 1..48) { "toRung invalido: $toRung" }
+        require(!passed || toRung == fromRung + 1) { "Assessment reprovado nao pode ter toRung != fromRung + 1" }
         viewModelScope.launch {
             assessmentRepository.saveAssessment(
                 AssessmentLog(

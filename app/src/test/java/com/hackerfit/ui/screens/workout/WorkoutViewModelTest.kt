@@ -6,8 +6,12 @@ import com.hackerfit.FakeStreakRepository
 import com.hackerfit.FakeUserProfileRepository
 import com.hackerfit.domain.model.Phase
 import com.hackerfit.domain.model.UserProfile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -32,10 +36,16 @@ class WorkoutViewModelTest {
 
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         profileRepo = FakeUserProfileRepository()
         dailyLogRepo = FakeDailyLogRepository()
         streakRepo = FakeStreakRepository()
         profileRepo.setProfile(testProfile)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     private fun createViewModel() {

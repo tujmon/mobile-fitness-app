@@ -50,6 +50,11 @@ fun AppNavHost(
                 onStartWorkout = { navController.navigate("workout") },
                 onStartAssessment = { navController.navigate("assessment") },
                 onViewLadder = { navController.navigate("ladder") },
+                onNavigateToOnboarding = {
+                    navController.navigate("onboarding") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
                 innerPadding = innerPadding
             )
         }

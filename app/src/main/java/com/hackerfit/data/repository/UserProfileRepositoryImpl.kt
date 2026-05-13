@@ -43,15 +43,32 @@ class UserProfileRepositoryImpl @Inject constructor(
     }
 
     override suspend fun completeOnboarding() {
-        dao.completeOnboarding()
+        if (dao.completeOnboarding() == 0) {
+            ensureProfileExists()
+            dao.completeOnboarding()
+        }
     }
 
     override suspend fun setReminderTime(hour: Int, minute: Int) {
-        dao.setReminderTime(hour, minute)
+        require(hour in 0..23) { "Hora invalida: $hour" }
+        require(minute in 0..59) { "Minuto invalido: $minute" }
+        if (dao.setReminderTime(hour, minute) == 0) {
+            ensureProfileExists()
+            dao.setReminderTime(hour, minute)
+        }
     }
 
     override suspend fun clearReminderTime() {
-        dao.clearReminderTime()
+        if (dao.clearReminderTime() == 0) {
+            ensureProfileExists()
+            dao.clearReminderTime()
+        }
+    }
+
+    private suspend fun ensureProfileExists() {
+        if (dao.getProfileOnce() == null) {
+            dao.saveProfile(UserProfileEntity())
+        }
     }
 
     override suspend fun recalculateCurrentRung() {

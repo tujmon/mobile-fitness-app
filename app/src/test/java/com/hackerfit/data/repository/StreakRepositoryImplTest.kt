@@ -3,6 +3,7 @@ package com.hackerfit.data.repository
 import com.hackerfit.data.local.preferences.StreakDataStore
 import com.hackerfit.domain.model.StreakData
 import com.hackerfit.domain.repository.DailyLogRepository
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -73,7 +74,16 @@ class StreakRepositoryImplTest {
     }
 
     @Test
-    fun `recalculateStreak does nothing`() = runTest {
+    fun `recalculateStreak updates streakCount from dailyLogRepository`() = runTest {
+        coEvery { dailyLogRepository.getConsecutiveDays() } returns 7
         repository.recalculateStreak()
+        coVerify { dataStore.updateStreakData(match { it.streakCount == 7 }) }
+    }
+
+    @Test
+    fun `recalculateStreak preserves freezesBanked`() = runTest {
+        coEvery { dailyLogRepository.getConsecutiveDays() } returns 3
+        repository.recalculateStreak()
+        coVerify { dataStore.updateStreakData(match { it.streakCount == 3 && it.freezesBanked == 1 }) }
     }
 }

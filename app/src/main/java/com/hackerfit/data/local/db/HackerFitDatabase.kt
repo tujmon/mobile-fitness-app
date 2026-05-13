@@ -14,6 +14,14 @@ import com.hackerfit.data.local.db.entity.UserProfileEntity
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            DELETE FROM daily_log
+            WHERE id NOT IN (
+                SELECT MAX(id) FROM daily_log GROUP BY date
+            )
+            """.trimIndent()
+        )
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_daily_log_date` ON `daily_log` (`date`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_daily_log_completed_date` ON `daily_log` (`completed`, `date`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_assessment_log_date` ON `assessment_log` (`date`)")

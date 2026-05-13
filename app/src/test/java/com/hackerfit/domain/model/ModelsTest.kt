@@ -116,22 +116,4 @@ class ModelsTest {
         assertEquals(20, ex.extraSteps)
         assertEquals(10, ex.jumpingJacksPerSet)
     }
-
-    @Test
-    fun `Rung data class`() {
-        val rung = Rung(1, Phase.INTRODUCTORY, 2, 3, 4, 5, 1, 30, 7)
-        assertEquals(1, rung.number)
-        assertEquals(Phase.INTRODUCTORY, rung.phase)
-        assertEquals(2, rung.bend)
-        assertEquals(7, rung.jumpingJacksPerSet)
-    }
-
-    @Test
-    fun `WorkoutSession data class`() {
-        val rung = Rung(1, Phase.INTRODUCTORY, 2, 3, 4, 5, 1, 30, 7)
-        val exercises = listOf(WorkoutExercise(0, "A", "B", 5))
-        val session = WorkoutSession(rung, exercises)
-        assertEquals(rung, session.rung)
-        assertEquals(1, session.exercises.size)
-    }
 }

@@ -29,9 +29,11 @@ class StreakDataStore @Inject constructor(
 
     val streakData: Flow<StreakData> = context.streakDataStore.data.map { prefs ->
         StreakData(
-            streakCount = prefs[Keys.STREAK_COUNT] ?: 0,
-            freezesBanked = prefs[Keys.FREEZES_BANKED] ?: 0,
-            lastFreezeEarnDate = prefs[Keys.LAST_FREEZE_EARN_DATE]?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
+            streakCount = (prefs[Keys.STREAK_COUNT] ?: 0).coerceAtLeast(0),
+            freezesBanked = (prefs[Keys.FREEZES_BANKED] ?: 0).coerceIn(0, 5),
+            lastFreezeEarnDate = runCatching {
+                prefs[Keys.LAST_FREEZE_EARN_DATE]?.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
+            }.getOrNull()
         )
     }
 

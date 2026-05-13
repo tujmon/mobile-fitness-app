@@ -50,7 +50,7 @@ android {
 
     testOptions {
         unitTests.all {
-            it.useJUnitPlatform()
+            it.useJUnit()
         }
     }
 }
@@ -94,6 +94,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.coroutines.test)
+    testImplementation("org.json:json:20231013")
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.runner)

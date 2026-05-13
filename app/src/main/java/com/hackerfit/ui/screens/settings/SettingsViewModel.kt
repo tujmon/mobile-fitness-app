@@ -1,7 +1,11 @@
 package com.hackerfit.ui.screens.settings
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hackerfit.data.export.DataExporter
@@ -11,6 +15,7 @@ import com.hackerfit.data.local.db.dao.DailyLogDao
 import com.hackerfit.data.local.db.dao.UserProfileDao
 import com.hackerfit.data.local.db.entity.UserProfileEntity
 import com.hackerfit.data.local.preferences.StreakDataStore
+import com.hackerfit.domain.repository.StreakRepository
 import com.hackerfit.domain.repository.UserProfileRepository
 import com.hackerfit.service.ReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -58,6 +63,7 @@ class SettingsViewModel @Inject constructor(
     private val dailyLogDao: DailyLogDao,
     private val assessmentLogDao: AssessmentLogDao,
     private val streakDataStore: StreakDataStore,
+    private val streakRepository: StreakRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -199,14 +205,16 @@ class SettingsViewModel @Inject constructor(
                 }
                 if (replace) {
                     data.streak.let { streakDataStore.updateStreakData(it) }
+                    streakRepository.recalculateStreak()
                     val savedProfile = userProfileDao.getProfileOnce()
-                    if (savedProfile?.dailyReminderHour != null) {
+                    if (savedProfile?.dailyReminderHour != null && hasNotificationPermission()) {
                         ReminderScheduler.schedule(context, savedProfile.dailyReminderHour, savedProfile.dailyReminderMinute ?: 0)
-                    } else {
+                    } else if (savedProfile?.dailyReminderHour == null) {
                         ReminderScheduler.cancel(context)
                     }
                 } else {
                     userProfileRepository.recalculateCurrentRung()
+                    streakRepository.recalculateStreak()
                 }
                 pendingImport = null
                 _importState.value = ImportState.Done
@@ -218,5 +226,10 @@ class SettingsViewModel @Inject constructor(
 
     fun resetImportState() {
         _importState.value = ImportState.Idle
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     }
 }

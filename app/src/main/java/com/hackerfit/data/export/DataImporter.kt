@@ -40,16 +40,20 @@ object DataImporter {
                 currentRung = rung,
                 phase = rawPhase,
                 rungStartDate = LocalDate.parse(p.getString("rungStartDate")),
-                dailyReminderHour = if (p.isNull("dailyReminderHour")) null else p.getInt("dailyReminderHour"),
-                dailyReminderMinute = if (p.isNull("dailyReminderMinute")) null else p.getInt("dailyReminderMinute"),
+                dailyReminderHour = if (p.isNull("dailyReminderHour")) null else p.getInt("dailyReminderHour").also { require(it in 0..23) { "Hora invalida: $it" } },
+                dailyReminderMinute = if (p.isNull("dailyReminderMinute")) null else p.getInt("dailyReminderMinute").also { require(it in 0..59) { "Minuto invalido: $it" } },
                 onboardingComplete = p.getBoolean("onboardingComplete")
             )
         }
 
         val streak = root.getJSONObject("streak").let { s ->
+            val streakCount = s.getInt("streakCount")
+            val freezesBanked = s.getInt("freezesBanked")
+            require(streakCount >= 0) { "streakCount invalido: $streakCount" }
+            require(freezesBanked in 0..5) { "freezesBanked invalido: $freezesBanked" }
             StreakData(
-                streakCount = s.getInt("streakCount"),
-                freezesBanked = s.getInt("freezesBanked"),
+                streakCount = streakCount,
+                freezesBanked = freezesBanked,
                 lastFreezeEarnDate = s.optString("lastFreezeEarnDate")
                     .takeIf { it.isNotEmpty() }
                     ?.let { LocalDate.parse(it) }

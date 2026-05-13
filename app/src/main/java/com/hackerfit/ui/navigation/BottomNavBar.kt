@@ -34,7 +34,6 @@ import com.hackerfit.domain.model.Phase
 import com.hackerfit.domain.model.UserProfile
 import com.hackerfit.domain.repository.UserProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -82,8 +81,8 @@ class MainViewModel @Inject constructor(
                         currentRung = 1,
                         phase = Phase.INTRODUCTORY,
                         rungStartDate = java.time.LocalDate.now(),
-                        dailyReminderHour = 8,
-                        dailyReminderMinute = 0,
+                        dailyReminderHour = null,
+                        dailyReminderMinute = null,
                         onboardingComplete = false
                     )
                 )
@@ -118,7 +117,7 @@ fun HackerFitNavHost(
         mainViewModel.pendingImportUri
             .filterNotNull()
             .collect {
-                delay(800)
+                startDestination ?: return@collect
                 navController.navigate("settings") {
                     popUpTo(navController.graph.findStartDestination().id) {
                         saveState = true

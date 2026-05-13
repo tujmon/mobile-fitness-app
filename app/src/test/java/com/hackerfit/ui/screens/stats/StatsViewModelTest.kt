@@ -5,8 +5,13 @@ import com.hackerfit.FakeDailyLogRepository
 import com.hackerfit.FakeStreakRepository
 import com.hackerfit.FakeUserProfileRepository
 import com.hackerfit.domain.model.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -23,14 +28,24 @@ class StatsViewModelTest {
 
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         profileRepo = FakeUserProfileRepository()
         dailyLogRepo = FakeDailyLogRepository()
         assessmentRepo = FakeAssessmentRepository()
         streakRepo = FakeStreakRepository()
     }
 
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
     private fun createViewModel() {
         viewModel = StatsViewModel(dailyLogRepo, assessmentRepo, streakRepo, profileRepo)
+    }
+
+    private suspend fun awaitSuccess(): StatsUiState.Success {
+        return viewModel.uiState.first { it is StatsUiState.Success } as StatsUiState.Success
     }
 
     @Test
@@ -49,8 +64,7 @@ class StatsViewModelTest {
             DailyLog(3, LocalDate.now(), 5, false, null)
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(2, state.totalWorkouts)
     }
 
@@ -60,8 +74,7 @@ class StatsViewModelTest {
         streakRepo.setStreakData(StreakData(7, 1, LocalDate.now()))
         dailyLogRepo.setLogs(emptyList())
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(7, state.currentStreak)
     }
 
@@ -77,8 +90,7 @@ class StatsViewModelTest {
             DailyLog(5, LocalDate.now().minusDays(1), 1, true, LocalDate.now().minusDays(1))
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(3, state.bestStreak)
     }
 
@@ -88,8 +100,7 @@ class StatsViewModelTest {
         streakRepo.setStreakData(StreakData(0, 0, null))
         dailyLogRepo.setLogs(emptyList())
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(12, state.currentRung)
     }
 
@@ -99,8 +110,7 @@ class StatsViewModelTest {
         streakRepo.setStreakData(StreakData(0, 0, null))
         dailyLogRepo.setLogs(emptyList())
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(7, state.weeklyData.size)
     }
 
@@ -115,8 +125,7 @@ class StatsViewModelTest {
             AssessmentLog(3, LocalDate.now().minusDays(3), 5, 6, false, null)
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(2, state.rungProgression.size)
         assertEquals(3, state.rungProgression[0].fromRung)
         assertEquals(4, state.rungProgression[1].fromRung)
@@ -128,8 +137,7 @@ class StatsViewModelTest {
         streakRepo.setStreakData(StreakData(0, 0, null))
         dailyLogRepo.setLogs(emptyList())
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(0, state.bestStreak)
     }
 
@@ -142,8 +150,7 @@ class StatsViewModelTest {
             DailyLog(2, LocalDate.now().minusDays(2), 1, false, null)
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(0, state.totalWorkouts)
     }
 
@@ -155,8 +162,7 @@ class StatsViewModelTest {
             DailyLog(1, LocalDate.now(), 1, true, LocalDate.now())
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(1, state.bestStreak)
     }
 
@@ -171,8 +177,7 @@ class StatsViewModelTest {
             DailyLog(4, LocalDate.now(), 1, true, LocalDate.now())
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(2, state.bestStreak)
     }
 
@@ -185,8 +190,7 @@ class StatsViewModelTest {
             DailyLog(1, today, 1, true, today)
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         val todayEntry = state.weeklyData.last()
         assertTrue(todayEntry.completed)
         assertEquals(1, todayEntry.rung)
@@ -204,8 +208,7 @@ class StatsViewModelTest {
             AssessmentLog(2, LocalDate.now(), 2, 3, false, null)
         ))
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(0, state.rungProgression.size)
     }
 
@@ -213,8 +216,7 @@ class StatsViewModelTest {
     fun `defaults to rung 1 when no profile`() = runTest(testDispatcher) {
         dailyLogRepo.setLogs(emptyList())
         createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as StatsUiState.Success
+        val state = awaitSuccess()
         assertEquals(1, state.currentRung)
     }
 }

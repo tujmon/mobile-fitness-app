@@ -35,6 +35,7 @@ fun HomeScreen(
     onStartWorkout: () -> Unit,
     onStartAssessment: () -> Unit,
     onViewLadder: () -> Unit,
+    onNavigateToOnboarding: () -> Unit = {},
     innerPadding: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -58,7 +59,9 @@ fun HomeScreen(
                 onViewLadder = onViewLadder
             )
         }
-        is HomeUiState.NotOnboarded -> {}
+        is HomeUiState.NotOnboarded -> {
+            LaunchedEffect(Unit) { onNavigateToOnboarding() }
+        }
     }
 }
 

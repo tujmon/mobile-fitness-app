@@ -5,7 +5,7 @@
 
     <application
         android:name=".HackerFitApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/logo"
         android:label="@string/app_name"
         android:supportsRtl="true"

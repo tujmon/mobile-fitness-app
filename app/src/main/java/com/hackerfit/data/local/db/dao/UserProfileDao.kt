@@ -16,13 +16,13 @@ interface UserProfileDao {
     suspend fun updateRung(rung: Int, phase: String, date: java.time.LocalDate)
 
     @Query("UPDATE user_profile SET onboardingComplete = 1 WHERE id = 1")
-    suspend fun completeOnboarding()
+    suspend fun completeOnboarding(): Int
 
     @Query("UPDATE user_profile SET dailyReminderHour = :hour, dailyReminderMinute = :minute WHERE id = 1")
-    suspend fun setReminderTime(hour: Int, minute: Int)
+    suspend fun setReminderTime(hour: Int, minute: Int): Int
 
     @Query("UPDATE user_profile SET dailyReminderHour = NULL, dailyReminderMinute = NULL WHERE id = 1")
-    suspend fun clearReminderTime()
+    suspend fun clearReminderTime(): Int
 
     @Query("SELECT * FROM user_profile WHERE id = 1")
     suspend fun getProfileOnce(): UserProfileEntity?

@@ -36,19 +36,22 @@ class UserProfileRepositoryImplTest {
             profileFlow.value = profileFlow.value?.copy(currentRung = rung, phase = phase, rungStartDate = date)
         }
 
-        override suspend fun completeOnboarding() {
+        override suspend fun completeOnboarding(): Int {
             completedOnboarding = true
             profileFlow.value = profileFlow.value?.copy(onboardingComplete = true)
+            return if (profileFlow.value != null) 1 else 0
         }
 
-        override suspend fun setReminderTime(hour: Int, minute: Int) {
+        override suspend fun setReminderTime(hour: Int, minute: Int): Int {
             reminderTime = Pair(hour, minute)
             profileFlow.value = profileFlow.value?.copy(dailyReminderHour = hour, dailyReminderMinute = minute)
+            return if (profileFlow.value != null) 1 else 0
         }
 
-        override suspend fun clearReminderTime() {
+        override suspend fun clearReminderTime(): Int {
             reminderCleared = true
             profileFlow.value = profileFlow.value?.copy(dailyReminderHour = null, dailyReminderMinute = null)
+            return if (profileFlow.value != null) 1 else 0
         }
 
         override suspend fun getProfileOnce() = profileFlow.value

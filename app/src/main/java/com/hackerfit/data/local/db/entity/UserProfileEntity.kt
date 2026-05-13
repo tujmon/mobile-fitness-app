@@ -10,7 +10,7 @@ data class UserProfileEntity(
     val currentRung: Int = 1,
     val phase: String = "introductory",
     val rungStartDate: LocalDate = LocalDate.now(),
-    val dailyReminderHour: Int? = 8,
-    val dailyReminderMinute: Int? = 0,
+    val dailyReminderHour: Int? = null,
+    val dailyReminderMinute: Int? = null,
     val onboardingComplete: Boolean = false
 )

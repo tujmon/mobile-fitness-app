@@ -21,7 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.hackerfit.ui.navigation.MainViewModel
-import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -225,7 +224,6 @@ fun SettingsScreen(
     }
 
     if (showTimePicker) {
-        val calendar = Calendar.getInstance()
         val initialHour = (uiState as? SettingsUiState.Success)?.hour ?: 8
         val initialMinute = (uiState as? SettingsUiState.Success)?.minute ?: 0
 

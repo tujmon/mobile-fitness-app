@@ -21,6 +21,8 @@ object ReminderScheduler {
     private const val WORK_NAME = "daily_reminder"
 
     fun schedule(context: Context, hour: Int, minute: Int) {
+        require(hour in 0..23) { "Hora invalida: $hour" }
+        require(minute in 0..59) { "Minuto invalido: $minute" }
         val now = LocalTime.now()
         val target = LocalTime.of(hour, minute)
         var delay = Duration.between(now, target).toMinutes()

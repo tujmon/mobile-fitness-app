@@ -229,4 +229,97 @@ class DataExporterImporterTest {
         assertNull(imported.profile!!.dailyReminderHour)
         assertNull(imported.profile!!.dailyReminderMinute)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects rung 0`() {
+        profileJson(currentRung = 0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects rung 49`() {
+        profileJson(currentRung = 49)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects invalid phase`() {
+        profileJson(phase = "advanced")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects log rung 0`() {
+        logJson(rung = 0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects log rung 49`() {
+        logJson(rung = 49)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects assessment fromRung 0`() {
+        assessmentJson(fromRung = 0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects assessment toRung 49`() {
+        assessmentJson(toRung = 49)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects reminder hour 24`() {
+        profileJson(reminderHour = 24)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects reminder hour negative`() {
+        profileJson(reminderHour = -1)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects reminder minute 60`() {
+        profileJson(reminderMinute = 60)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects negative streakCount`() {
+        val json = baseJson("""{"streakCount": -1, "freezesBanked": 0, "lastFreezeEarnDate": ""}""")
+        DataImporter.parseFromJson(json)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects negative freezesBanked`() {
+        val json = baseJson("""{"streakCount": 0, "freezesBanked": -1, "lastFreezeEarnDate": ""}""")
+        DataImporter.parseFromJson(json)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import rejects freezesBanked above 5`() {
+        val json = baseJson("""{"streakCount": 0, "freezesBanked": 6, "lastFreezeEarnDate": ""}""")
+        DataImporter.parseFromJson(json)
+    }
+
+    private fun baseJson(streakJson: String): String =
+        """{"version": 1, "app": "HackerFit", "streak": $streakJson, "dailyLogs": [], "assessmentLogs": []}"""
+
+    private fun profileJson(
+        currentRung: Int = 5,
+        phase: String = "introductory",
+        reminderHour: Int? = null,
+        reminderMinute: Int? = null
+    ) {
+        val hourStr = reminderHour?.toString() ?: "null"
+        val minuteStr = reminderMinute?.toString() ?: "null"
+        val json = """{"version": 1, "app": "HackerFit", "profile": {"currentRung": $currentRung, "phase": "$phase", "rungStartDate": "2025-01-01", "dailyReminderHour": $hourStr, "dailyReminderMinute": $minuteStr, "onboardingComplete": true}, "streak": {"streakCount": 0, "freezesBanked": 0, "lastFreezeEarnDate": ""}, "dailyLogs": [], "assessmentLogs": []}"""
+        DataImporter.parseFromJson(json)
+    }
+
+    private fun logJson(rung: Int = 5) {
+        val json = """{"version": 1, "app": "HackerFit", "streak": {"streakCount": 0, "freezesBanked": 0, "lastFreezeEarnDate": ""}, "dailyLogs": [{"date": "2025-03-01", "rung": $rung, "completed": true, "completedAt": "2025-03-01"}], "assessmentLogs": []}"""
+        DataImporter.parseFromJson(json)
+    }
+
+    private fun assessmentJson(fromRung: Int = 3, toRung: Int = 4) {
+        val json = """{"version": 1, "app": "HackerFit", "streak": {"streakCount": 0, "freezesBanked": 0, "lastFreezeEarnDate": ""}, "dailyLogs": [], "assessmentLogs": [{"date": "2025-02-01", "fromRung": $fromRung, "toRung": $toRung, "passed": true, "notes": null}]}"""
+        DataImporter.parseFromJson(json)
+    }
 }

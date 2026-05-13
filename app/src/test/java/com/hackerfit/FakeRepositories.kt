@@ -25,8 +25,10 @@ class FakeUserProfileRepository : UserProfileRepository {
     }
 
     override suspend fun updateRung(rungNumber: Int) {
+        require(rungNumber in 1..48) { "Degrau invalido: $rungNumber" }
         profileState.value?.let {
-            profileState.value = it.copy(currentRung = rungNumber)
+            val phase = if (rungNumber <= 15) Phase.INTRODUCTORY else Phase.LIFETIME
+            profileState.value = it.copy(currentRung = rungNumber, phase = phase)
         }
     }
 
@@ -37,6 +39,8 @@ class FakeUserProfileRepository : UserProfileRepository {
     }
 
     override suspend fun setReminderTime(hour: Int, minute: Int) {
+        require(hour in 0..23) { "Hora invalida: $hour" }
+        require(minute in 0..59) { "Minuto invalido: $minute" }
         profileState.value?.let {
             profileState.value = it.copy(dailyReminderHour = hour, dailyReminderMinute = minute)
         }

@@ -5,8 +5,12 @@ import com.hackerfit.FakeAssessmentRepository
 import com.hackerfit.FakeUserProfileRepository
 import com.hackerfit.domain.model.Phase
 import com.hackerfit.domain.model.UserProfile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -30,9 +34,15 @@ class AssessmentViewModelTest {
 
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         profileRepo = FakeUserProfileRepository()
         assessmentRepo = FakeAssessmentRepository()
         profileRepo.setProfile(testProfile)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     private fun createViewModel() {
@@ -59,8 +69,8 @@ class AssessmentViewModelTest {
         profileRepo.setProfile(testProfile.copy(currentRung = 48))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as AssessmentUiState.Ready
-        assertEquals(48, state.nextRung)
+        val state = viewModel.uiState.value
+        assertTrue(state is AssessmentUiState.MaxRungReached)
     }
 
     @Test

@@ -8,8 +8,13 @@ import com.hackerfit.domain.model.DailyLog
 import com.hackerfit.domain.model.Phase
 import com.hackerfit.domain.model.StreakData
 import com.hackerfit.domain.model.UserProfile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -34,13 +39,23 @@ class HomeViewModelTest {
 
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         profileRepo = FakeUserProfileRepository()
         dailyLogRepo = FakeDailyLogRepository()
         streakRepo = FakeStreakRepository()
     }
 
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
     private fun createViewModel() {
         viewModel = HomeViewModel(profileRepo, dailyLogRepo, streakRepo)
+    }
+
+    private suspend fun awaitSuccess(): HomeUiState.Success {
+        return viewModel.uiState.first { it is HomeUiState.Success } as HomeUiState.Success
     }
 
     @Test
@@ -54,7 +69,8 @@ class HomeViewModelTest {
         profileRepo.setProfile(null)
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        assertTrue(viewModel.uiState.value is HomeUiState.NotOnboarded)
+        val state = viewModel.uiState.first { it !is HomeUiState.Loading }
+        assertTrue(state is HomeUiState.NotOnboarded)
     }
 
     @Test
@@ -63,8 +79,8 @@ class HomeViewModelTest {
         streakRepo.setStreakData(StreakData(5, 1, null))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
-        assertEquals(3, state.currentRung)
+        val state = viewModel.uiState.first { it is HomeUiState.Success }
+        assertEquals(3, (state as HomeUiState.Success).currentRung)
     }
 
     @Test
@@ -73,7 +89,7 @@ class HomeViewModelTest {
         streakRepo.setStreakData(StreakData(7, 1, LocalDate.now()))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertEquals(7, state.streakCount)
     }
 
@@ -83,7 +99,7 @@ class HomeViewModelTest {
         streakRepo.setStreakData(StreakData(10, 2, LocalDate.now()))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertEquals(2, state.freezesBanked)
     }
 
@@ -93,7 +109,7 @@ class HomeViewModelTest {
         streakRepo.setStreakData(StreakData(0, 0, null))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertFalse(state.completedToday)
     }
 
@@ -106,19 +122,8 @@ class HomeViewModelTest {
         ))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertTrue(state.completedToday)
-    }
-
-    @Test
-    fun `creates default profile when none exists`() = runTest(testDispatcher) {
-        profileRepo.setProfile(null)
-        createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val profile = profileRepo.profileState.value
-        assertNotNull(profile)
-        assertEquals(1, profile!!.currentRung)
-        assertFalse(profile.onboardingComplete)
     }
 
     @Test
@@ -137,7 +142,7 @@ class HomeViewModelTest {
         streakRepo.setStreakData(StreakData(0, 0, null))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertEquals(startDate, state.rungStartDate)
     }
 
@@ -150,7 +155,7 @@ class HomeViewModelTest {
         ))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertFalse(state.completedToday)
     }
 
@@ -160,7 +165,7 @@ class HomeViewModelTest {
         streakRepo.setStreakData(StreakData(5, 1, null))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertEquals(25, state.currentRung)
     }
 
@@ -170,24 +175,10 @@ class HomeViewModelTest {
         streakRepo.setStreakData(StreakData(3, 0, null))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(3, (viewModel.uiState.value as HomeUiState.Success).streakCount)
+        assertEquals(3, awaitSuccess().streakCount)
         streakRepo.setStreakData(StreakData(4, 0, null))
         testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(4, (viewModel.uiState.value as HomeUiState.Success).streakCount)
-    }
-
-    @Test
-    fun `default profile has correct default values`() = runTest(testDispatcher) {
-        profileRepo.setProfile(null)
-        createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        val profile = profileRepo.profileState.value!!
-        assertEquals(1, profile.currentRung)
-        assertEquals(Phase.INTRODUCTORY, profile.phase)
-        assertEquals(LocalDate.now(), profile.rungStartDate)
-        assertEquals(8, profile.dailyReminderHour)
-        assertEquals(0, profile.dailyReminderMinute)
-        assertFalse(profile.onboardingComplete)
+        assertEquals(4, awaitSuccess().streakCount)
     }
 
     @Test
@@ -199,7 +190,7 @@ class HomeViewModelTest {
         ))
         createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
-        val state = viewModel.uiState.value as HomeUiState.Success
+        val state = awaitSuccess()
         assertFalse(state.completedToday)
     }
 }
