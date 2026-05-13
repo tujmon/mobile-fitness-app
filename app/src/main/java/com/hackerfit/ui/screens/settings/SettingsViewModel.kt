@@ -17,6 +17,8 @@ import com.hackerfit.data.local.db.dao.DailyLogDao
 import com.hackerfit.data.local.db.dao.UserProfileDao
 import com.hackerfit.data.local.db.entity.UserProfileEntity
 import com.hackerfit.data.local.preferences.StreakDataStore
+import com.hackerfit.domain.policy.ReminderImportDecision
+import com.hackerfit.domain.policy.ReminderImportPolicy
 import com.hackerfit.domain.repository.StreakRepository
 import com.hackerfit.domain.repository.UserProfileRepository
 import com.hackerfit.service.ReminderScheduler
@@ -60,7 +62,7 @@ private data class AssessmentDedupKey(
 )
 
 @HiltViewModel
-open class SettingsViewModel @Inject constructor(
+class SettingsViewModel @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
     private val userProfileDao: UserProfileDao,
     private val dailyLogDao: DailyLogDao,
@@ -68,6 +70,7 @@ open class SettingsViewModel @Inject constructor(
     private val streakDataStore: StreakDataStore,
     private val streakRepository: StreakRepository,
     private val database: HackerFitDatabase,
+    private val reminderImportPolicy: ReminderImportPolicy,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -213,21 +216,26 @@ open class SettingsViewModel @Inject constructor(
                     data.streak.let { streakDataStore.updateStreakData(it) }
                     streakRepository.recalculateStreak()
                     val savedProfile = userProfileDao.getProfileOnce()
-                    var reminderCleared = false
-                    if (savedProfile?.dailyReminderHour != null) {
-                        if (hasNotificationPermission()) {
-                            ReminderScheduler.schedule(context, savedProfile.dailyReminderHour, savedProfile.dailyReminderMinute ?: 0)
-                        } else {
+                    val decision = reminderImportPolicy.resolve(
+                        reminderHour = savedProfile?.dailyReminderHour,
+                        reminderMinute = savedProfile?.dailyReminderMinute,
+                        hasNotificationPermission = hasNotificationPermission()
+                    )
+                    when (decision) {
+                        is ReminderImportDecision.Schedule -> {
+                            ReminderScheduler.schedule(context, decision.hour, decision.minute)
+                        }
+                        is ReminderImportDecision.CancelOnly -> {
+                            ReminderScheduler.cancel(context)
+                        }
+                        is ReminderImportDecision.ClearAndCancel -> {
                             userProfileRepository.clearReminderTime()
                             ReminderScheduler.cancel(context)
-                            reminderCleared = true
                         }
-                    } else {
-                        ReminderScheduler.cancel(context)
                     }
                     pendingImport = null
-                    _importState.value = if (reminderCleared) {
-                        ImportState.DoneWithWarning("Dados importados, mas o lembrete foi desativado porque a permiss\u00e3o de notifica\u00e7\u00e3o n\u00e3o foi concedida.")
+                    _importState.value = if (decision is ReminderImportDecision.ClearAndCancel) {
+                        ImportState.DoneWithWarning(decision.warningMessage)
                     } else {
                         ImportState.Done
                     }
@@ -247,12 +255,12 @@ open class SettingsViewModel @Inject constructor(
         _importState.value = ImportState.Idle
     }
 
-    protected open fun hasNotificationPermission(): Boolean {
+    private fun hasNotificationPermission(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
         return ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     }
 
-    protected open suspend fun runInTransaction(block: suspend () -> Unit) {
+    private suspend fun runInTransaction(block: suspend () -> Unit) {
         database.withTransaction(block)
     }
 }
