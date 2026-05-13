@@ -350,6 +350,18 @@ fun SettingsScreen(
                 }
             )
         }
+        is ImportState.DoneWithWarning -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.resetImportState() },
+                title = { Text("Importado com aviso") },
+                text = { Text(impState.message) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetImportState() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
         is ImportState.Error -> {
             AlertDialog(
                 onDismissRequest = { viewModel.resetImportState() },

@@ -41,6 +41,7 @@ sealed class ImportState {
     data object Loading : ImportState()
     data class Confirm(val logCount: Int, val assessmentCount: Int) : ImportState()
     data object Done : ImportState()
+    data class DoneWithWarning(val message: String) : ImportState()
     data class Error(val message: String) : ImportState()
 }
 
@@ -212,22 +213,30 @@ class SettingsViewModel @Inject constructor(
                     data.streak.let { streakDataStore.updateStreakData(it) }
                     streakRepository.recalculateStreak()
                     val savedProfile = userProfileDao.getProfileOnce()
+                    var reminderCleared = false
                     if (savedProfile?.dailyReminderHour != null) {
                         if (hasNotificationPermission()) {
                             ReminderScheduler.schedule(context, savedProfile.dailyReminderHour, savedProfile.dailyReminderMinute ?: 0)
                         } else {
                             userProfileRepository.clearReminderTime()
                             ReminderScheduler.cancel(context)
+                            reminderCleared = true
                         }
                     } else {
                         ReminderScheduler.cancel(context)
                     }
+                    pendingImport = null
+                    _importState.value = if (reminderCleared) {
+                        ImportState.DoneWithWarning("Dados importados, mas o lembrete foi desativado porque a permissao de notificacao nao foi concedida.")
+                    } else {
+                        ImportState.Done
+                    }
                 } else {
                     userProfileRepository.recalculateCurrentRung()
                     streakRepository.recalculateStreak()
+                    pendingImport = null
+                    _importState.value = ImportState.Done
                 }
-                pendingImport = null
-                _importState.value = ImportState.Done
             } catch (e: Exception) {
                 _importState.value = ImportState.Error(e.message ?: "Erro ao importar")
             }
