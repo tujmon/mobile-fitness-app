@@ -227,7 +227,7 @@ class SettingsViewModel @Inject constructor(
                     }
                     pendingImport = null
                     _importState.value = if (reminderCleared) {
-                        ImportState.DoneWithWarning("Dados importados, mas o lembrete foi desativado porque a permissao de notificacao nao foi concedida.")
+                        ImportState.DoneWithWarning("Dados importados, mas o lembrete foi desativado porque a permiss\u00e3o de notifica\u00e7\u00e3o n\u00e3o foi concedida.")
                     } else {
                         ImportState.Done
                     }
